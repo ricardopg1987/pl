@@ -1,0 +1,242 @@
+# Sistema de Gestión de Especialistas y Pacientes
+# Copyright (C) 2025
+# This file is distributed under the same license as the SGEP package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Sistema de Gestión de Especialistas y Pacientes 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-03-22 14:48+0100\n"
+"PO-Revision-Date: 2023-03-22 14:48+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.2.2\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
+"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: includes/class-sgep-activator.php:42
+msgid "Iniciar Sesión"
+msgstr "Iniciar Sesión"
+
+#: includes/class-sgep-activator.php:46
+msgid "Registro"
+msgstr "Registro"
+
+#: includes/class-sgep-activator.php:50
+msgid "Panel del Especialista"
+msgstr "Panel del Especialista"
+
+#: includes/class-sgep-activator.php:54
+msgid "Panel del Cliente"
+msgstr "Panel del Cliente"
+
+#: includes/class-sgep-activator.php:58
+msgid "Test de Compatibilidad"
+msgstr "Test de Compatibilidad"
+
+#: includes/class-sgep-activator.php:62
+msgid "Resultados de Compatibilidad"
+msgstr "Resultados de Compatibilidad"
+
+#: includes/class-sgep-activator.php:66
+msgid "Directorio de Especialistas"
+msgstr "Directorio de Especialistas"
+
+#: includes/class-sgep-roles.php:58
+msgid "Especialista"
+msgstr "Especialista"
+
+#: includes/class-sgep-roles.php:76
+msgid "Cliente"
+msgstr "Cliente"
+
+#: includes/class-sgep-shortcodes.php:64
+msgid "Todos los campos son obligatorios."
+msgstr "Todos los campos son obligatorios."
+
+#: includes/class-sgep-shortcodes.php:66
+msgid "El email no es válido."
+msgstr "El email no es válido."
+
+#: includes/class-sgep-shortcodes.php:68
+msgid "Las contraseñas no coinciden."
+msgstr "Las contraseñas no coinciden."
+
+#: includes/class-sgep-shortcodes.php:70
+msgid "La contraseña debe tener al menos 8 caracteres."
+msgstr "La contraseña debe tener al menos 8 caracteres."
+
+#: includes/class-sgep-shortcodes.php:72
+msgid "El nombre de usuario ya existe."
+msgstr "El nombre de usuario ya existe."
+
+#: includes/class-sgep-shortcodes.php:74
+msgid "El email ya está registrado."
+msgstr "El email ya está registrado."
+
+#: includes/class-sgep-shortcodes.php:76
+msgid "Rol inválido."
+msgstr "Rol inválido."
+
+#: includes/class-sgep-shortcodes.php:95
+msgid "Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión."
+msgstr "Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión."
+
+#: includes/class-sgep-shortcodes.php:125
+#, php-format
+msgid "Debes <a href=\"%s\">iniciar sesión</a> como especialista para acceder a esta página."
+msgstr "Debes <a href=\"%s\">iniciar sesión</a> como especialista para acceder a esta página."
+
+#: includes/class-sgep-shortcodes.php:132
+msgid "No tienes permisos para acceder a esta página."
+msgstr "No tienes permisos para acceder a esta página."
+
+#: includes/class-sgep-shortcodes.php:154
+#, php-format
+msgid "Debes <a href=\"%s\">iniciar sesión</a> como cliente para acceder a esta página."
+msgstr "Debes <a href=\"%s\">iniciar sesión</a> como cliente para acceder a esta página."
+
+#: includes/class-sgep-shortcodes.php:175
+#, php-format
+msgid "Antes de continuar, debes <a href=\"%s\">completar el test de compatibilidad</a>."
+msgstr "Antes de continuar, debes <a href=\"%s\">completar el test de compatibilidad</a>."
+
+#: includes/class-sgep-shortcodes.php:194
+msgid "Para realizar el test de compatibilidad y encontrar el especialista ideal para ti, necesitas iniciar sesión o registrarte."
+msgstr "Para realizar el test de compatibilidad y encontrar el especialista ideal para ti, necesitas iniciar sesión o registrarte."
+
+#: includes/class-sgep-shortcodes.php:197
+msgid "Iniciar Sesión"
+msgstr "Iniciar Sesión"
+
+#: includes/class-sgep-shortcodes.php:198
+msgid "Registrarse"
+msgstr "Registrarse"
+
+#: includes/class-sgep-shortcodes.php:209
+msgid "Solo los clientes pueden realizar el test de compatibilidad."
+msgstr "Solo los clientes pueden realizar el test de compatibilidad."
+
+#: includes/class-sgep-shortcodes.php:221
+#, php-format
+msgid "Ya has realizado el test de compatibilidad. <a href=\"%s\">Ver resultados</a>."
+msgstr "Ya has realizado el test de compatibilidad. <a href=\"%s\">Ver resultados</a>."
+
+#: includes/class-sgep-shortcodes.php:329
+#, php-format
+msgid "Debes <a href=\"%s\">iniciar sesión</a> para ver tus resultados."
+msgstr "Debes <a href=\"%s\">iniciar sesión</a> para ver tus resultados."
+
+#: includes/class-sgep-shortcodes.php:336
+msgid "Solo los clientes pueden ver los resultados del test de compatibilidad."
+msgstr "Solo los clientes pueden ver los resultados del test de compatibilidad."
+
+#: includes/class-sgep-shortcodes.php:348
+#, php-format
+msgid "Aún no has realizado el test de compatibilidad. <a href=\"%s\">Realizar test</a>."
+msgstr "Aún no has realizado el test de compatibilidad. <a href=\"%s\">Realizar test</a>."
+
+#: includes/class-sgep-shortcodes.php:394
+msgid "Todas"
+msgstr "Todas"
+
+#: includes/class-sgep-shortcodes.php:404
+msgid "Online"
+msgstr "Online"
+
+#: includes/class-sgep-shortcodes.php:407
+msgid "Presencial"
+msgstr "Presencial"
+
+#: includes/class-sgep-shortcodes.php:415
+msgid "Todos"
+msgstr "Todos"
+
+#: includes/class-sgep-shortcodes.php:416
+msgid "Hombre"
+msgstr "Hombre"
+
+#: includes/class-sgep-shortcodes.php:417
+msgid "Mujer"
+msgstr "Mujer"
+
+#: includes/class-sgep-shortcodes.php:424
+msgid "Filtrar"
+msgstr "Filtrar"
+
+#: includes/class-sgep-shortcodes.php:425
+msgid "Limpiar filtros"
+msgstr "Limpiar filtros"
+
+#: includes/class-sgep-shortcodes.php:529
+msgid "No se encontraron especialistas que coincidan con los filtros aplicados."
+msgstr "No se encontraron especialistas que coincidan con los filtros aplicados."
+
+#: public/templates/panel-especialista/dashboard.php:88
+msgid "No tienes citas programadas próximamente."
+msgstr "No tienes citas programadas próximamente."
+
+#: public/templates/panel-especialista/dashboard.php:93
+msgid "Ver todas las citas"
+msgstr "Ver todas las citas"
+
+#: public/templates/panel-especialista/disponibilidad.php:54
+msgid "No hay horarios configurados"
+msgstr "No hay horarios configurados"
+
+#: public/templates/panel-cliente/dashboard.php:86
+msgid "¡Realiza el test de compatibilidad!"
+msgstr "¡Realiza el test de compatibilidad!"
+
+#: public/templates/panel-cliente/dashboard.php:87
+msgid "Para encontrar el especialista ideal para ti, te recomendamos realizar nuestro test de compatibilidad."
+msgstr "Para encontrar el especialista ideal para ti, te recomendamos realizar nuestro test de compatibilidad."
+
+#: public/templates/panel-cliente/dashboard.php:88
+msgid "Realizar Test"
+msgstr "Realizar Test"
+
+#: public/templates/test-match-form.php:13
+msgid "Por favor, responde a las siguientes preguntas para ayudarnos a encontrar el especialista ideal para ti."
+msgstr "Por favor, responde a las siguientes preguntas para ayudarnos a encontrar el especialista ideal para ti."
+
+#: public/templates/test-match-form.php:48
+msgid "Enviar Respuestas"
+msgstr "Enviar Respuestas"
+
+#: public/templates/resultados-match.php:24
+msgid "Hemos encontrado los siguientes especialistas que mejor se adaptan a tus necesidades:"
+msgstr "Hemos encontrado los siguientes especialistas que mejor se adaptan a tus necesidades:"
+
+#: public/templates/resultados-match.php:33
+msgid "Mejor Match"
+msgstr "Mejor Match"
+
+#: public/templates/resultados-match.php:121
+msgid "Ver Perfil"
+msgstr "Ver Perfil"
+
+#: public/templates/resultados-match.php:122
+msgid "Agendar Cita"
+msgstr "Agendar Cita"
+
+#: public/templates/resultados-match.php:128
+msgid "No se encontraron especialistas que coincidan con tus preferencias."
+msgstr "No se encontraron especialistas que coincidan con tus preferencias."
+
+#: public/templates/resultados-match.php:134
+msgid "También puedes explorar nuestro directorio completo de especialistas:"
+msgstr "También puedes explorar nuestro directorio completo de especialistas:"
+
+#: public/templates/resultados-match.php:135
+msgid "Ver todos los especialistas"
+msgstr "Ver todos los especialistas"
+
+# Y muchas más cadenas de texto...

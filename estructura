@@ -1,0 +1,59 @@
+sistema-gestion-especialistas-pacientes/
+│
+├── sistema-gestion-especialistas-pacientes.php     (Archivo principal del plugin)
+│
+├── includes/
+│   ├── class-sgep-activator.php                    (Clase Activador)
+│   ├── class-sgep-deactivator.php                  (Clase Desactivador)
+│   ├── class-sgep-roles.php                        (Clase de Roles)
+│   ├── class-sgep-shortcodes.php                   (Clase de Shortcodes)
+│   └── class-sgep-ajax.php                         (Clase AJAX)
+│
+├── admin/
+│   ├── class-sgep-admin.php                        (Clase de Administración)
+│   ├── css/
+│   │   └── sgep-admin.css                          (CSS del Admin)
+│   ├── js/
+│   │   └── sgep-admin.js                           (JavaScript del Admin)
+│   └── templates/
+│       ├── dashboard.php                           (Plantilla de dashboard admin)
+│       ├── especialistas.php                       (Plantilla de gestión de especialistas)
+│       ├── clientes.php                            (Plantilla de gestión de clientes)
+│       ├── citas.php                               (Plantilla de gestión de citas)
+│       ├── test.php                                (Plantilla de configuración de test)
+│       ├── settings.php                            (Plantilla de configuración)
+│       ├── user-meta-especialista.php              (Plantilla de metadatos de especialista)
+│       └── user-meta-cliente.php                   (Plantilla de metadatos de cliente)
+│
+├── public/
+│   ├── class-sgep-public.php                       (Clase Pública)
+│   ├── css/
+│   │   └── sgep-public.css                         (CSS del Frontend)
+│   ├── js/
+│   │   └── sgep-public.js                          (JavaScript del Frontend)
+│   └── templates/
+│       ├── login-form.php                          (Plantilla de formulario de login)
+│       ├── registro-form.php                       (Plantilla de formulario de registro)
+│       ├── panel-especialista.php                  (Plantilla de panel de especialista)
+│       ├── panel-cliente.php                       (Plantilla de panel de cliente)
+│       ├── test-match-form.php                     (Plantilla de formulario de test de match)
+│       ├── resultados-match.php                    (Plantilla de resultados de match)
+│       ├── directorio-especialistas.php            (Plantilla de directorio de especialistas)
+│       │
+│       ├── panel-especialista/
+│       │   ├── dashboard.php                       (Plantilla de dashboard de especialista)
+│       │   ├── perfil.php                          (Plantilla de perfil de especialista)
+│       │   ├── disponibilidad.php                  (Plantilla de disponibilidad)
+│       │   ├── citas.php                           (Plantilla de citas de especialista)
+│       │   └── mensajes.php                        (Plantilla de mensajes de especialista)
+│       │
+│       └── panel-cliente/
+│           ├── dashboard.php                       (Plantilla de dashboard de cliente)
+│           ├── perfil.php                          (Plantilla de perfil de cliente)
+│           ├── especialistas.php                   (Plantilla de especialistas recomendados)
+│           ├── citas.php                           (Plantilla de citas de cliente)
+│           └── mensajes.php                        (Plantilla de mensajes de cliente)
+│
+└── languages/                                      (Directorio para archivos de traducción)
+    ├── sgep-es_ES.po
+    └── sgep-es_ES.mo
