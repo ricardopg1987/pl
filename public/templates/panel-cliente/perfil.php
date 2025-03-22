@@ -19,6 +19,10 @@ $telefono = get_user_meta($cliente_id, 'sgep_telefono', true);
 $fecha_nacimiento = get_user_meta($cliente_id, 'sgep_fecha_nacimiento', true);
 $intereses = get_user_meta($cliente_id, 'sgep_intereses', true);
 
+// Mensaje para almacenar resultado del procesamiento del formulario
+$mensaje_perfil = '';
+$redirect = false;
+
 // Procesar envío del formulario
 if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_nonce'], 'sgep_actualizar_perfil')) {
     // Procesar datos del formulario
@@ -31,12 +35,53 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     update_user_meta($cliente_id, 'sgep_fecha_nacimiento', $fecha_nacimiento);
     update_user_meta($cliente_id, 'sgep_intereses', $intereses);
     
-    // Redireccionar a la misma página con mensaje de éxito
-    $redirect = add_query_arg('msg', 'perfil_actualizado', remove_query_arg('msg'));
-    wp_redirect($redirect);
-    exit;
+    // Configurar mensaje de éxito
+    $mensaje_perfil = __('Tu perfil ha sido actualizado correctamente.', 'sgep');
+    $redirect = true;
 }
+
+// Realizar redirección usando JavaScript si es necesario
+if ($redirect) {
+    echo '<script>
+        // Añadir mensaje al localStorage
+        localStorage.setItem("sgep_perfil_mensaje", "' . esc_js($mensaje_perfil) . '");
+        // Redireccionar a la misma página
+        window.location.href = "?tab=perfil";
+    </script>';
+    
+    // No ejecutar el resto del código
+    return;
+}
+
+// Verificar si hay mensaje en localStorage para mostrar
 ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay mensaje en localStorage
+    var mensaje = localStorage.getItem('sgep_perfil_mensaje');
+    if (mensaje) {
+        // Crear y mostrar la notificación
+        var notificacion = document.createElement('div');
+        notificacion.className = 'sgep-notification';
+        notificacion.textContent = mensaje;
+        
+        // Insertar al principio del contenedor
+        var contenedor = document.querySelector('.sgep-perfil-container');
+        contenedor.insertBefore(notificacion, contenedor.firstChild);
+        
+        // Eliminar del localStorage
+        localStorage.removeItem('sgep_perfil_mensaje');
+        
+        // Ocultar después de 5 segundos
+        setTimeout(function() {
+            notificacion.style.opacity = '0';
+            setTimeout(function() {
+                notificacion.remove();
+            }, 500);
+        }, 5000);
+    }
+});
+</script>
 
 <div class="sgep-perfil-container">
     <?php if (isset($_GET['msg']) && $_GET['msg'] === 'perfil_actualizado') : ?>

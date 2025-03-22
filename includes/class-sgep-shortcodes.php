@@ -42,11 +42,13 @@ class SGEP_Shortcodes {
             $pages = get_option('sgep_pages', array());
             
             if ($roles->is_especialista()) {
-                wp_redirect(get_permalink($pages['sgep-panel-especialista']));
-                exit;
+                // En lugar de usar wp_redirect, usar JavaScript
+                echo '<script>window.location.href = "' . esc_url(get_permalink($pages['sgep-panel-especialista'])) . '";</script>';
+                return '';
             } elseif ($roles->is_cliente()) {
-                wp_redirect(get_permalink($pages['sgep-panel-cliente']));
-                exit;
+                // En lugar de usar wp_redirect, usar JavaScript
+                echo '<script>window.location.href = "' . esc_url(get_permalink($pages['sgep-panel-cliente'])) . '";</script>';
+                return '';
             }
         }
         
@@ -74,8 +76,9 @@ class SGEP_Shortcodes {
                     $redirect_to = get_permalink($pages['sgep-panel-cliente']);
                 }
                 
-                wp_redirect($redirect_to);
-                exit;
+                // En lugar de usar wp_redirect, usar JavaScript
+                echo '<script>window.location.href = "' . esc_url($redirect_to) . '";</script>';
+                return '';
             }
         }
         
@@ -99,11 +102,13 @@ class SGEP_Shortcodes {
             $pages = get_option('sgep_pages', array());
             
             if ($roles->is_especialista()) {
-                wp_redirect(get_permalink($pages['sgep-panel-especialista']));
-                exit;
+                // En lugar de usar wp_redirect, usar JavaScript
+                echo '<script>window.location.href = "' . esc_url(get_permalink($pages['sgep-panel-especialista'])) . '";</script>';
+                return '';
             } elseif ($roles->is_cliente()) {
-                wp_redirect(get_permalink($pages['sgep-panel-cliente']));
-                exit;
+                // En lugar de usar wp_redirect, usar JavaScript
+                echo '<script>window.location.href = "' . esc_url(get_permalink($pages['sgep-panel-cliente'])) . '";</script>';
+                return '';
             }
         }
         
@@ -169,8 +174,9 @@ class SGEP_Shortcodes {
                     $redirect_page = $role === 'especialista' ? 'sgep-panel-especialista' : 'sgep-panel-cliente';
                     
                     if (isset($pages[$redirect_page])) {
-                        wp_redirect(get_permalink($pages[$redirect_page]));
-                        exit;
+                        // En lugar de usar wp_redirect, usar JavaScript
+                        echo '<script>window.location.href = "' . esc_url(get_permalink($pages[$redirect_page])) . '";</script>';
+                        return '';
                     }
                     */
                 }
@@ -345,8 +351,9 @@ class SGEP_Shortcodes {
             $pages = get_option('sgep_pages', array());
             $resultados_url = isset($pages['sgep-resultados-match']) ? get_permalink($pages['sgep-resultados-match']) : '#';
             
-            wp_redirect($resultados_url);
-            exit;
+            // En lugar de usar wp_redirect, usar JavaScript
+            echo '<script>window.location.href = "' . esc_url($resultados_url) . '";</script>';
+            return '';
         }
         
         // Obtener preguntas del test

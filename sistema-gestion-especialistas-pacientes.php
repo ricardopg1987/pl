@@ -19,6 +19,14 @@ define('SGEP_VERSION', '1.0');
 define('SGEP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SGEP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+/**
+ * Buffer de salida para evitar errores de "headers already sent"
+ */
+function sgep_output_buffer() {
+    ob_start();
+}
+add_action('init', 'sgep_output_buffer', 1); // Prioridad 1 para que se ejecute primero
+
 // Incluir archivos del plugin
 require_once SGEP_PLUGIN_DIR . 'includes/class-sgep-activator.php';
 require_once SGEP_PLUGIN_DIR . 'includes/class-sgep-deactivator.php';
@@ -164,3 +172,6 @@ function sgep_handle_login_redirect($user_login, $user) {
         exit;
     }
 }
+
+// Desactivar el módulo de optimización de imágenes de Elementor que está causando problemas
+add_filter('elementor/image-loading/optimization_active', '__return_false');
