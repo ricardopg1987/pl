@@ -54,13 +54,18 @@ jQuery(document).ready(function($) {
             }
         });
         
-        // Agregar nueva opción
-        $(document).on('click', '.sgep-add-option', function(e) {
+        // Agregar nueva opción - CORREGIDO
+        $(document).on('click', '.sgep-add-option, .sgep-test-add-option a', function(e) {
             e.preventDefault();
             
             var $question = $(this).closest('.sgep-test-question');
             var questionId = $question.data('id');
             var $optionsContainer = $question.find('.sgep-test-question-options');
+            
+            // Asegurar que tengamos el id correcto
+            if (!questionId) {
+                questionId = $question.find('input[name*="[id]"]').val();
+            }
             
             var newOption = optionTemplate.replace(/\{question_id\}/g, questionId);
             $optionsContainer.append(newOption);

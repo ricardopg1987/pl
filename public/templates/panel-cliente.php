@@ -28,6 +28,19 @@ $test_realizado = $wpdb->get_var($wpdb->prepare(
 ?>
 
 <div class="sgep-panel-container">
+    <!-- Añadimos estilo CSS para el botón de cierre de sesión en el menú -->
+    <style>
+        .sgep-panel-tabs ul li.sgep-logout-button {
+            float: right;
+            margin-right: 0;
+        }
+        .sgep-panel-tabs ul li.sgep-logout-button a:hover {
+            color: #b32d2e !important;
+            font-weight: bold;
+        }
+    </style>
+    <!-- Se ha eliminado el botón superior y se ha movido al menú de navegación -->
+    
     <div class="sgep-panel-header">
         <h2><?php _e('Panel del Cliente', 'sgep'); ?></h2>
         <p class="sgep-welcome"><?php printf(__('Bienvenido/a, %s', 'sgep'), $user->display_name); ?></p>
@@ -64,6 +77,12 @@ $test_realizado = $wpdb->get_var($wpdb->prepare(
                     <a href="?tab=test"><?php _e('Test de Compatibilidad', 'sgep'); ?></a>
                 </li>
                 <?php endif; ?>
+                <!-- Botón de cierre de sesión en el menú -->
+                <li class="sgep-logout-button">
+                    <a href="<?php echo wp_logout_url(home_url()); ?>" style="color: #d63638;">
+                        <?php _e('Cerrar Sesión', 'sgep'); ?>
+                    </a>
+                </li>
             </ul>
         </div>
         

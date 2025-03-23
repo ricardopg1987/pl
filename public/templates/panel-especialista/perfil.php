@@ -3,6 +3,7 @@
  * Plantilla para la pestaña de perfil del panel de especialista
  * 
  * Ruta: /public/templates/panel-especialista/perfil.php
+ * Versión con estilo original pero con capacidad de carga de imágenes
  */
 
 // Evitar acceso directo
@@ -26,6 +27,7 @@ $acepta_presencial = get_user_meta($especialista_id, 'sgep_acepta_presencial', t
 $habilidades = get_user_meta($especialista_id, 'sgep_habilidades', true);
 $metodologias = get_user_meta($especialista_id, 'sgep_metodologias', true);
 $genero = get_user_meta($especialista_id, 'sgep_genero', true);
+$imagen_perfil = get_user_meta($especialista_id, 'sgep_imagen_perfil', true);
 
 // Mensaje para almacenar resultado del procesamiento del formulario
 $mensaje_perfil = '';
@@ -46,6 +48,35 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     $metodologias = sanitize_text_field($_POST['sgep_metodologias']);
     $genero = sanitize_text_field($_POST['sgep_genero']);
     
+    // Manejo de la imagen de perfil
+    if (!empty($_FILES['sgep_imagen_perfil']['name'])) {
+        // Requerir los archivos de WordPress necesarios para la carga de imágenes
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        
+        // Manejar la carga del archivo
+        $attachment_id = media_handle_upload('sgep_imagen_perfil', 0);
+        
+        if (is_wp_error($attachment_id)) {
+            $mensaje_perfil = __('Error al subir la imagen: ', 'sgep') . $attachment_id->get_error_message();
+        } else {
+            // Eliminar imagen anterior si existe
+            $imagen_anterior_id = get_user_meta($especialista_id, 'sgep_imagen_perfil_id', true);
+            if ($imagen_anterior_id) {
+                wp_delete_attachment($imagen_anterior_id, true);
+            }
+            
+            // Guardar ID de la nueva imagen
+            update_user_meta($especialista_id, 'sgep_imagen_perfil_id', $attachment_id);
+            
+            // Obtener URL de la imagen
+            $imagen_url = wp_get_attachment_url($attachment_id);
+            update_user_meta($especialista_id, 'sgep_imagen_perfil', $imagen_url);
+            $imagen_perfil = $imagen_url;
+        }
+    }
+    
     // Actualizar meta datos
     update_user_meta($especialista_id, 'sgep_especialidad', $especialidad);
     update_user_meta($especialista_id, 'sgep_descripcion', $descripcion);
@@ -60,8 +91,10 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     update_user_meta($especialista_id, 'sgep_genero', $genero);
     
     // Configurar mensaje de éxito
-    $mensaje_perfil = __('Tu perfil ha sido actualizado correctamente.', 'sgep');
-    $redirect = true;
+    if (empty($mensaje_perfil)) {
+        $mensaje_perfil = __('Tu perfil ha sido actualizado correctamente.', 'sgep');
+        $redirect = true;
+    }
 }
 
 // Realizar redirección usando JavaScript si es necesario
@@ -104,19 +137,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }, 5000);
     }
+    
+    // Vista previa de la imagen
+    var inputImagen = document.getElementById('sgep_imagen_perfil');
+    var previewImagen = document.getElementById('sgep_preview_imagen');
+    var previewContainer = document.getElementById('sgep_preview_container');
+    
+    if (inputImagen && previewImagen) {
+        inputImagen.addEventListener('change', function() {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImagen.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 </script>
 
 <div class="sgep-perfil-container">
-    <?php if (isset($_GET['msg']) && $_GET['msg'] === 'perfil_actualizado') : ?>
+    <?php if (!empty($mensaje_perfil)) : ?>
         <div class="sgep-notification">
-            <?php _e('Tu perfil ha sido actualizado correctamente.', 'sgep'); ?>
+            <?php echo esc_html($mensaje_perfil); ?>
         </div>
     <?php endif; ?>
     
     <div class="sgep-perfil-header">
         <div class="sgep-perfil-avatar">
-            <?php echo get_avatar($especialista_id, 100); ?>
+            <?php if (!empty($imagen_perfil)) : ?>
+                <img src="<?php echo esc_url($imagen_perfil); ?>" alt="<?php echo esc_attr($usuario->display_name); ?>" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+            <?php else : ?>
+                <?php echo get_avatar($especialista_id, 100); ?>
+            <?php endif; ?>
         </div>
         <div class="sgep-perfil-info">
             <h3><?php echo esc_html($usuario->display_name); ?></h3>
@@ -124,8 +180,23 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
     
-    <form method="post" class="sgep-form sgep-perfil-form">
+    <form method="post" class="sgep-form sgep-perfil-form" enctype="multipart/form-data">
         <?php wp_nonce_field('sgep_actualizar_perfil', 'sgep_perfil_nonce'); ?>
+        
+        <div class="sgep-perfil-section">
+            <h4><?php _e('Imagen de Perfil', 'sgep'); ?></h4>
+            
+            <div class="sgep-form-field">
+                <label for="sgep_imagen_perfil"><?php _e('Seleccionar imagen', 'sgep'); ?></label>
+                <input type="file" id="sgep_imagen_perfil" name="sgep_imagen_perfil" accept="image/*">
+                <p class="sgep-field-description"><?php _e('Sube una imagen profesional para tu perfil. Formatos: JPG, PNG. Tamaño máximo: 2MB.', 'sgep'); ?></p>
+                
+                <div id="sgep_preview_container" style="display: none; margin-top: 10px;">
+                    <p><?php _e('Vista previa:', 'sgep'); ?></p>
+                    <img src="" id="sgep_preview_imagen" alt="<?php _e('Vista previa', 'sgep'); ?>" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
         
         <div class="sgep-perfil-section">
             <h4><?php _e('Información Personal', 'sgep'); ?></h4>
@@ -247,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     'adolescentes' => __('Psicología de Adolescentes', 'sgep'),
                 );
                 
-                echo '<div class="sgep-habilidades-grid">';
                 foreach ($habilidades_options as $value => $label) :
                     $checked = is_array($habilidades) && in_array($value, $habilidades) ? 'checked="checked"' : '';
                 ?>
@@ -257,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </label>
                 <?php 
                 endforeach;
-                echo '</div>';
                 ?>
                 <p class="sgep-field-description"><?php _e('Selecciona las áreas en las que te especializas.', 'sgep'); ?></p>
             </div>
@@ -268,3 +337,34 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </form>
 </div>
+
+<style>
+/* Estilos mínimos para vista previa de imagen */
+#sgep_preview_container {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px dashed #ddd;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+#sgep_preview_imagen {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Mejoras para las checkboxes de habilidades */
+.sgep-checkbox {
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Asegurar que las imágenes se muestren correctamente */
+.sgep-perfil-avatar img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+</style>

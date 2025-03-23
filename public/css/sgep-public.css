@@ -1319,3 +1319,557 @@
         flex-direction: column;
     }
 }
+/* Estilos para el botón de cerrar sesión */
+.sgep-panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.sgep-header-main {
+    flex: 1;
+}
+
+.sgep-header-actions {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.sgep-logout-btn {
+    font-size: 14px;
+    padding: 6px 12px;
+}
+
+@media (max-width: 768px) {
+    .sgep-panel-header {
+        flex-direction: column;
+    }
+    
+    .sgep-header-actions {
+        margin-left: 0;
+        margin-top: 15px;
+        align-self: flex-end;
+    }
+}
+/**
+ * Estilos adicionales para el panel de especialista
+ * 
+ * Añadir este código al archivo public/css/sgep-public.css
+ */
+
+/* Mejoras visuales para el perfil de especialista */
+.sgep-perfil-container {
+    max-width: 900px;
+    margin: 0 auto 40px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* Sección destacada del perfil */
+.sgep-perfil-destacado {
+    margin-bottom: 30px;
+}
+
+.sgep-perfil-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.sgep-perfil-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.sgep-perfil-imagen {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 25px;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sgep-perfil-imagen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sgep-perfil-info {
+    flex: 1;
+}
+
+.sgep-perfil-info h3 {
+    margin: 0 0 10px;
+    font-size: 24px;
+    color: #333;
+}
+
+.sgep-perfil-meta {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sgep-perfil-titulo {
+    font-weight: 600;
+}
+
+.sgep-perfil-separador {
+    margin: 0 10px;
+    color: #ccc;
+}
+
+.sgep-perfil-especialidad {
+    color: #0073aa;
+}
+
+.sgep-perfil-contacto {
+    color: #777;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Stats en el perfil */
+.sgep-perfil-stats {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sgep-stat-item {
+    padding: 15px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    min-width: 120px;
+}
+
+.sgep-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0073aa;
+    margin-bottom: 5px;
+}
+
+.sgep-stat-label {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Secciones del formulario */
+.sgep-perfil-section {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f0f0f0;
+}
+
+.sgep-perfil-section h4 {
+    color: #333;
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    position: relative;
+}
+
+.sgep-perfil-section h4:after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    height: 2px;
+    width: 60px;
+    background-color: #0073aa;
+}
+
+/* Mejoras para campos de formulario */
+.sgep-form-field {
+    margin-bottom: 25px;
+}
+
+.sgep-form-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #444;
+}
+
+.sgep-form-field input[type="text"],
+.sgep-form-field input[type="number"],
+.sgep-form-field input[type="email"],
+.sgep-form-field textarea,
+.sgep-form-field select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.sgep-form-field input[type="text"]:focus,
+.sgep-form-field input[type="number"]:focus,
+.sgep-form-field input[type="email"]:focus,
+.sgep-form-field textarea:focus,
+.sgep-form-field select:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.15);
+    outline: none;
+}
+
+.sgep-form-field textarea {
+    min-height: 120px;
+    line-height: 1.5;
+}
+
+.sgep-field-description {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* Mejora de checkboxes y radio buttons */
+.sgep-checkbox-group {
+    margin-top: 10px;
+}
+
+.sgep-fancy-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    cursor: pointer;
+    padding: 5px 0;
+    transition: all 0.2s ease;
+}
+
+.sgep-fancy-checkbox:hover {
+    color: #0073aa;
+}
+
+.sgep-checkbox-indicator {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+.sgep-fancy-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.sgep-fancy-checkbox input[type="checkbox"]:checked ~ .sgep-checkbox-indicator {
+    background-color: #0073aa;
+    border-color: #0073aa;
+}
+
+.sgep-fancy-checkbox input[type="checkbox"]:checked ~ .sgep-checkbox-indicator:after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Grid de habilidades */
+.sgep-habilidades-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+/* Estilos para la carga de imágenes */
+.sgep-img-upload {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.sgep-current-img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 30px;
+    margin-bottom: 20px;
+    border: 3px solid #f0f0f0;
+    background-color: #f9f9f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sgep-current-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sgep-upload-controls {
+    flex: 1;
+    min-width: 300px;
+}
+
+.sgep-upload-label {
+    display: inline-block;
+    background-color: #f8f9fa;
+    color: #0073aa;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.sgep-upload-label:hover {
+    background-color: #e9ecef;
+    border-color: #0073aa;
+}
+
+.sgep-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.sgep-preview-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px dashed #ddd;
+}
+
+.sgep-preview-container p {
+    margin-top: 0;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.sgep-preview-img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+/* Botones de acción */
+.sgep-form-actions {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.sgep-button {
+    display: inline-block;
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-align: center;
+}
+
+.sgep-button-primary {
+    background-color: #0073aa;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 115, 170, 0.2);
+}
+
+.sgep-button-primary:hover {
+    background-color: #005f8b;
+    box-shadow: 0 4px 8px rgba(0, 115, 170, 0.3);
+}
+
+.sgep-button-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+    margin-left: 15px;
+}
+
+.sgep-button-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+/* Notificaciones mejoradas */
+.sgep-notification {
+    padding: 15px 20px;
+    border-radius: 6px;
+    margin: 0 0 25px;
+    background-color: #e3f2fd;
+    color: #0288d1;
+    border-left: 4px solid #0288d1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.5s ease;
+    position: relative;
+    transition: opacity 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .sgep-perfil-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .sgep-perfil-imagen {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+    
+    .sgep-perfil-stats {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .sgep-stat-item {
+        width: 100%;
+    }
+    
+    .sgep-habilidades-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .sgep-img-upload {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .sgep-current-img {
+        margin-right: 0;
+    }
+    
+    .sgep-form-actions {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .sgep-button {
+        width: 100%;
+    }
+    
+    .sgep-button-secondary {
+        margin-left: 0;
+    }
+}
+
+/* Animaciones y efectos adicionales */
+.sgep-perfil-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.sgep-stat-value {
+    transition: color 0.3s ease;
+}
+
+.sgep-stat-item:hover .sgep-stat-value {
+    color: #005f8b;
+}
+
+/* Modo oscuro (opcional) */
+@media (prefers-color-scheme: dark) {
+    .sgep-perfil-container,
+    .sgep-perfil-section {
+        background-color: #292929;
+        border-color: #333;
+    }
+    
+    .sgep-perfil-card {
+        background: linear-gradient(135deg, #333 0%, #222 100%);
+    }
+    
+    .sgep-perfil-section h4 {
+        color: #eee;
+        border-bottom-color: #444;
+    }
+    
+    .sgep-perfil-info h3 {
+        color: #fff;
+    }
+    
+    .sgep-form-field label {
+        color: #ddd;
+    }
+    
+    .sgep-form-field input[type="text"],
+    .sgep-form-field input[type="number"],
+    .sgep-form-field input[type="email"],
+    .sgep-form-field textarea,
+    .sgep-form-field select {
+        background-color: #333;
+        border-color: #444;
+        color: #eee;
+    }
+    
+    .sgep-field-description {
+        color: #aaa;
+    }
+    
+    .sgep-button-secondary {
+        background-color: #333;
+        color: #ddd;
+    }
+    
+    .sgep-stat-item {
+        background-color: rgba(30, 30, 30, 0.7);
+    }
+    
+    .sgep-perfil-meta,
+    .sgep-perfil-contacto,
+    .sgep-stat-label {
+        color: #bbb;
+    }
+}

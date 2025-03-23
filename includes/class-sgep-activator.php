@@ -212,6 +212,13 @@ class SGEP_Activator {
                     'relaciones' => 'Relaciones',
                     'duelo' => 'Duelo',
                     'trauma' => 'Trauma',
+                    'adicciones' => 'Adicciones',
+                    'alimentacion' => 'Trastornos Alimenticios',
+                    'sueno' => 'Problemas de Sueño',
+                    'desarrollo_personal' => 'Desarrollo Personal',
+                    'coaching' => 'Coaching',
+                    'familiar' => 'Terapia Familiar',
+                    'pareja' => 'Terapia de Pareja',
                 )
             ),
             array(

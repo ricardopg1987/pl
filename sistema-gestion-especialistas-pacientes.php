@@ -41,6 +41,109 @@ register_activation_hook(__FILE__, array('SGEP_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('SGEP_Deactivator', 'deactivate'));
 
 /**
+ * Aumentar límite máximo de carga de archivos (corregido)
+ */
+function sgep_upload_max_size() {
+    return 2 * 1024 * 1024; // 2MB
+}
+add_filter('upload_size_limit', 'sgep_upload_max_size');
+
+/**
+ * Permite a los roles de especialistas y clientes subir archivos
+ */
+function sgep_allow_user_uploads() {
+    // Permitir que especialistas y clientes suban archivos
+    $roles = array('sgep_especialista', 'sgep_cliente');
+    foreach ($roles as $role) {
+        if ($role_obj = get_role($role)) {
+            $role_obj->add_cap('upload_files');
+        }
+    }
+}
+add_action('admin_init', 'sgep_allow_user_uploads');
+
+/**
+ * Configura los datos de enctype para formularios de carga de archivos
+ */
+function sgep_form_enctype_setup() {
+    ?>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        // Asegurarse de que los formularios tengan el enctype correcto
+        $('.sgep-perfil-form').attr('enctype', 'multipart/form-data');
+    });
+    </script>
+    <?php
+}
+add_action('wp_footer', 'sgep_form_enctype_setup');
+
+/**
+ * Registrar las meta keys adicionales para los usuarios
+ */
+function sgep_register_user_meta() {
+    register_meta('user', 'sgep_imagen_perfil', array(
+        'type' => 'string',
+        'description' => 'URL de la imagen de perfil del usuario',
+        'single' => true,
+        'sanitize_callback' => 'esc_url_raw',
+        'show_in_rest' => true,
+    ));
+    
+    register_meta('user', 'sgep_imagen_perfil_id', array(
+        'type' => 'integer',
+        'description' => 'ID del attachment de la imagen de perfil',
+        'single' => true,
+        'sanitize_callback' => 'absint',
+        'show_in_rest' => true,
+    ));
+}
+add_action('init', 'sgep_register_user_meta');
+
+/**
+ * Estilizar el panel de especialista con estilos personalizados
+ */
+function sgep_enqueue_panel_styles() {
+    // Comprobar si estamos en la página del panel de especialista
+    $current_url = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    $pages = get_option('sgep_pages', array());
+    
+    $is_panel_page = false;
+    if (!empty($pages['sgep-panel-especialista'])) {
+        $panel_page = get_post($pages['sgep-panel-especialista']);
+        if ($panel_page && strpos($current_url, $panel_page->post_name) !== false) {
+            $is_panel_page = true;
+        }
+    }
+    
+    if ($is_panel_page && is_user_logged_in()) {
+        wp_enqueue_media(); // Habilitar el media uploader de WordPress
+        
+        // Añadir JavaScript para gestionar la carga y vista previa de imágenes
+        wp_add_inline_script('sgep-public-js', "
+            jQuery(document).ready(function($) {
+                // Inicializar la vista previa de imagen
+                $('#sgep_imagen_perfil').on('change', function() {
+                    var file = this.files[0];
+                    var reader = new FileReader();
+                    var preview = $('#sgep_preview_imagen');
+                    var container = $('#sgep_preview_container');
+                    
+                    reader.onload = function(e) {
+                        preview.attr('src', e.target.result);
+                        container.show();
+                    }
+                    
+                    if (file) {
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        ");
+    }
+}
+add_action('wp_enqueue_scripts', 'sgep_enqueue_panel_styles', 20);
+
+/**
  * Clase principal del plugin
  */
 class SGEP_Plugin {

@@ -21,6 +21,13 @@ $mensaje = isset($_GET['msg']) ? sanitize_text_field($_GET['msg']) : '';
 ?>
 
 <div class="sgep-panel-container">
+    <!-- Botón de cerrar sesión en la parte superior derecha -->
+    <div style="text-align: right; padding: 10px;">
+        <a href="<?php echo wp_logout_url(home_url()); ?>" style="display: inline-block; padding: 5px 10px; background-color: #d63638; color: white; text-decoration: none; border-radius: 3px; font-size: 14px;">
+            <?php _e('Cerrar Sesión', 'sgep'); ?>
+        </a>
+    </div>
+
     <div class="sgep-panel-header">
         <h2><?php _e('Panel del Especialista', 'sgep'); ?></h2>
         <p class="sgep-welcome"><?php printf(__('Bienvenido/a, %s', 'sgep'), $user->display_name); ?></p>
