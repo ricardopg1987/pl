@@ -10,12 +10,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Declarar $wpdb como global
+global $wpdb;
+
 // Obtener datos del especialista
 $especialista_id = $user->ID;
 
 // Obtener estadísticas
-global $wpdb;
-
 $citas_pendientes = $wpdb->get_var($wpdb->prepare(
     "SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas 
     WHERE especialista_id = %d AND estado = 'pendiente'",

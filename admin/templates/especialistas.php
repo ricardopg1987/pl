@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Declarar $wpdb como global
+global $wpdb;
+
 // Verificar acción
 $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
 $especialista_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -422,7 +425,6 @@ if (($action === 'view' || $action === 'edit') && $especialista_id > 0) {
                             
                             <?php
                             // Obtener estadísticas
-                            global $wpdb;
                             
                             $total_citas = $wpdb->get_var($wpdb->prepare(
                                 "SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas WHERE especialista_id = %d",
@@ -507,75 +509,75 @@ if (($action === 'view' || $action === 'edit') && $especialista_id > 0) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($especialistas as $especialista) : 
-                            $especialidad = get_user_meta($especialista->ID, 'sgep_especialidad', true);
-                            $rating = get_user_meta($especialista->ID, 'sgep_rating', true);
-                            $acepta_online = get_user_meta($especialista->ID, 'sgep_acepta_online', true);
-                            $acepta_presencial = get_user_meta($especialista->ID, 'sgep_acepta_presencial', true);
-                        ?>
-                            <tr>
-                                <td><?php echo esc_html($especialista->ID); ?></td>
-                                <td><?php echo get_avatar($especialista->ID, 32); ?></td>
-                                <td>
-                                    <strong>
-                                        <a href="<?php echo admin_url('admin.php?page=sgep-especialistas&action=view&id=' . $especialista->ID); ?>">
-                                            <?php echo esc_html($especialista->display_name); ?>
-                                        </a>
-                                    </strong>
-                                </td>
-                                <td><?php echo esc_html($especialista->user_email); ?></td>
-                                <td><?php echo !empty($especialidad) ? esc_html($especialidad) : '-'; ?></td>
-                                <td>
-                                    <?php
-                                    if (!empty($rating)) {
-                                        $rating_value = floatval($rating);
-                                        for ($i = 1; $i <= 5; $i++) {
-                                            if ($i <= $rating_value) {
-                                                echo '<span class="sgep-star sgep-star-full">★</span>';
-                                            } elseif ($i - 0.5 <= $rating_value) {
-                                                echo '<span class="sgep-star sgep-star-half">★</span>';
-                                            } else {
-                                                echo '<span class="sgep-star sgep-star-empty">☆</span>';
-                                            }
-                                        }
-                                        echo ' <span class="sgep-rating-value">(' . number_format($rating_value, 1) . ')</span>';
-                                    } else {
-                                        echo '-';
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    $modalidades = array();
-                                    if ($acepta_online) {
-                                        $modalidades[] = __('Online', 'sgep');
-                                    }
-                                    if ($acepta_presencial) {
-                                        $modalidades[] = __('Presencial', 'sgep');
-                                    }
-                                    
-                                    if (!empty($modalidades)) {
-                                        echo esc_html(implode(', ', $modalidades));
-                                    } else {
-                                        echo '-';
-                                    }
-                                    ?>
-                                </td>
-                                <td><?php echo date_i18n(get_option('date_format'), strtotime($especialista->user_registered)); ?></td>
-                                <td class="sgep-table-actions">
-                                    <a href="<?php echo admin_url('admin.php?page=sgep-especialistas&action=view&id=' . $especialista->ID); ?>" class="sgep-action-button"><?php _e('Ver', 'sgep'); ?></a>
-                                    <a href="<?php echo admin_url('admin.php?page=sgep-especialistas&action=edit&id=' . $especialista->ID); ?>" class="sgep-action-button"><?php _e('Editar', 'sgep'); ?></a>
-                                    <a href="<?php echo admin_url('user-edit.php?user_id=' . $especialista->ID); ?>" class="sgep-action-button"><?php _e('Editar Usuario', 'sgep'); ?></a>
-                                    <a href="#" class="sgep-action-button sgep-action-delete sgep-delete-especialista" data-id="<?php echo $especialista->ID; ?>"><?php _e('Eliminar', 'sgep'); ?></a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php else : ?>
-                <p><?php _e('No hay especialistas registrados.', 'sgep'); ?></p>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php
+                    <?php foreach ($especialistas as $especialista) : 
+                           $especialidad = get_user_meta($especialista->ID, 'sgep_especialidad', true);
+                           $rating = get_user_meta($especialista->ID, 'sgep_rating', true);
+                           $acepta_online = get_user_meta($especialista->ID, 'sgep_acepta_online', true);
+                           $acepta_presencial = get_user_meta($especialista->ID, 'sgep_acepta_presencial', true);
+                       ?>
+                           <tr>
+                               <td><?php echo esc_html($especialista->ID); ?></td>
+                               <td><?php echo get_avatar($especialista->ID, 32); ?></td>
+                               <td>
+                                   <strong>
+                                       <a href="<?php echo admin_url('admin.php?page=sgep-especialistas&action=view&id=' . $especialista->ID); ?>">
+                                           <?php echo esc_html($especialista->display_name); ?>
+                                       </a>
+                                   </strong>
+                               </td>
+                               <td><?php echo esc_html($especialista->user_email); ?></td>
+                               <td><?php echo !empty($especialidad) ? esc_html($especialidad) : '-'; ?></td>
+                               <td>
+                                   <?php
+                                   if (!empty($rating)) {
+                                       $rating_value = floatval($rating);
+                                       for ($i = 1; $i <= 5; $i++) {
+                                           if ($i <= $rating_value) {
+                                               echo '<span class="sgep-star sgep-star-full">★</span>';
+                                           } elseif ($i - 0.5 <= $rating_value) {
+                                               echo '<span class="sgep-star sgep-star-half">★</span>';
+                                           } else {
+                                               echo '<span class="sgep-star sgep-star-empty">☆</span>';
+                                           }
+                                       }
+                                       echo ' <span class="sgep-rating-value">(' . number_format($rating_value, 1) . ')</span>';
+                                   } else {
+                                       echo '-';
+                                   }
+                                   ?>
+                               </td>
+                               <td>
+                                   <?php
+                                   $modalidades = array();
+                                   if ($acepta_online) {
+                                       $modalidades[] = __('Online', 'sgep');
+                                   }
+                                   if ($acepta_presencial) {
+                                       $modalidades[] = __('Presencial', 'sgep');
+                                   }
+                                   
+                                   if (!empty($modalidades)) {
+                                       echo esc_html(implode(', ', $modalidades));
+                                   } else {
+                                       echo '-';
+                                   }
+                                   ?>
+                               </td>
+                               <td><?php echo date_i18n(get_option('date_format'), strtotime($especialista->user_registered)); ?></td>
+                               <td class="sgep-table-actions">
+                                   <a href="<?php echo admin_url('admin.php?page=sgep-especialistas&action=view&id=' . $especialista->ID); ?>" class="sgep-action-button"><?php _e('Ver', 'sgep'); ?></a>
+                                   <a href="<?php echo admin_url('admin.php?page=sgep-especialistas&action=edit&id=' . $especialista->ID); ?>" class="sgep-action-button"><?php _e('Editar', 'sgep'); ?></a>
+                                   <a href="<?php echo admin_url('user-edit.php?user_id=' . $especialista->ID); ?>" class="sgep-action-button"><?php _e('Editar Usuario', 'sgep'); ?></a>
+                                   <a href="#" class="sgep-action-button sgep-action-delete sgep-delete-especialista" data-id="<?php echo $especialista->ID; ?>"><?php _e('Eliminar', 'sgep'); ?></a>
+                               </td>
+                           </tr>
+                       <?php endforeach; ?>
+                   </tbody>
+               </table>
+           <?php else : ?>
+               <p><?php _e('No hay especialistas registrados.', 'sgep'); ?></p>
+           <?php endif; ?>
+       </div>
+   </div>
+   <?php
 }

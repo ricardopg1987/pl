@@ -9,6 +9,65 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Declarar $wpdb como global
+global $wpdb;
+
+// Parámetros de paginación
+$paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+$per_page = 20;
+$offset = ($paged - 1) * $per_page;
+
+// Filtros
+$estado = isset($_GET['estado']) ? sanitize_text_field($_GET['estado']) : '';
+$especialista_id = isset($_GET['especialista_id']) ? intval($_GET['especialista_id']) : 0;
+$cliente_id = isset($_GET['cliente_id']) ? intval($_GET['cliente_id']) : 0;
+
+// Consulta base
+$query = "SELECT c.*, e.display_name as especialista_nombre, cl.display_name as cliente_nombre 
+          FROM {$wpdb->prefix}sgep_citas c
+          LEFT JOIN {$wpdb->users} e ON c.especialista_id = e.ID
+          LEFT JOIN {$wpdb->users} cl ON c.cliente_id = cl.ID
+          WHERE 1=1";
+$count_query = "SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas WHERE 1=1";
+$query_args = array();
+
+// Agregar filtros
+if (!empty($estado)) {
+    $query .= " AND c.estado = %s";
+    $count_query .= " AND estado = %s";
+    $query_args[] = $estado;
+}
+
+if ($especialista_id > 0) {
+    $query .= " AND c.especialista_id = %d";
+    $count_query .= " AND especialista_id = %d";
+    $query_args[] = $especialista_id;
+}
+
+if ($cliente_id > 0) {
+    $query .= " AND c.cliente_id = %d";
+    $count_query .= " AND cliente_id = %d";
+    $query_args[] = $cliente_id;
+}
+
+// Ordenar
+$query .= " ORDER BY c.fecha DESC";
+
+// Paginación
+$query .= " LIMIT %d OFFSET %d";
+$query_args[] = $per_page;
+$query_args[] = $offset;
+
+// Obtener resultados
+$citas = $wpdb->get_results($wpdb->prepare($query, $query_args));
+$total_items = $wpdb->get_var($wpdb->prepare($count_query, array_slice($query_args, 0, -2)));
+$total_pages = ceil($total_items / $per_page);
+
+// Obtener especialistas y clientes para los filtros
+$roles = new SGEP_Roles();
+$especialistas = $roles->get_all_especialistas();
+$clientes = $roles->get_all_clientes();
 ?>
 
 <div class="wrap sgep-admin-container">
@@ -146,17 +205,17 @@ if (!defined('ABSPATH')) {
                     ?>
                 </div>
             <?php endif; ?>
-        <?php else : ?>
-            <p><?php _e('No se encontraron citas con los filtros aplicados.', 'sgep'); ?></p>
-        <?php endif; ?>
-    </div>
+            <?php else : ?>
+           <p><?php _e('No se encontraron citas con los filtros aplicados.', 'sgep'); ?></p>
+       <?php endif; ?>
+   </div>
 </div>
 
 <!-- Modal para ver detalles de cita -->
 <div id="sgep-cita-detalles-modal" class="sgep-modal">
-    <div class="sgep-modal-content">
-        <span class="sgep-modal-close">&times;</span>
-        <h2><?php _e('Detalles de la Cita', 'sgep'); ?></h2>
-        <div id="sgep-cita-detalles-content"></div>
-    </div>
+   <div class="sgep-modal-content">
+       <span class="sgep-modal-close">&times;</span>
+       <h2><?php _e('Detalles de la Cita', 'sgep'); ?></h2>
+       <div id="sgep-cita-detalles-content"></div>
+   </div>
 </div>

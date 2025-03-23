@@ -10,12 +10,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Declarar $wpdb como global
+global $wpdb;
+
 // Obtener datos del cliente
 $cliente_id = get_current_user_id();
 
 // Obtener estadísticas
-global $wpdb;
-
 $citas_pendientes = $wpdb->get_var($wpdb->prepare(
     "SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas 
     WHERE cliente_id = %d AND estado = 'pendiente'",

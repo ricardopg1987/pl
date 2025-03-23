@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Definir $wpdb como global
+global $wpdb;
+
 // Verificar acción
 $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
 $cliente_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -316,6 +319,7 @@ if (($action === 'view' || $action === 'edit') && $cliente_id > 0) {
                             $telefono = get_user_meta($cliente->ID, 'sgep_telefono', true);
                             
                             // Verificar si ha realizado el test
+                            global $wpdb;
                             $test_realizado = $wpdb->get_var($wpdb->prepare(
                                 "SELECT COUNT(*) FROM {$wpdb->prefix}sgep_test_resultados WHERE cliente_id = %d",
                                 $cliente->ID

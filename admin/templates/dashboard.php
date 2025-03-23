@@ -9,6 +9,20 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Declarar $wpdb como global
+global $wpdb;
+
+// Obtener estadísticas
+$total_especialistas = count_users()['avail_roles']['sgep_especialista'] ?? 0;
+$total_clientes = count_users()['avail_roles']['sgep_cliente'] ?? 0;
+
+$total_citas = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas");
+$citas_pendientes = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas WHERE estado = 'pendiente'");
+$citas_confirmadas = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas WHERE estado = 'confirmada'");
+$citas_canceladas = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas WHERE estado = 'cancelada'");
+
+$total_tests = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sgep_test_resultados");
 ?>
 
 <div class="wrap sgep-admin-container">

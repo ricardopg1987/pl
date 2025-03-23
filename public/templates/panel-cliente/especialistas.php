@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Declarar $wpdb como global
+global $wpdb;
+
 // Obtener cliente actual
 $cliente_id = get_current_user_id();
 
@@ -43,7 +46,6 @@ if ($especialista_id > 0) {
     $rating = get_user_meta($especialista_id, 'sgep_rating', true);
     
     // Verificar si tenemos un match con este especialista
-    global $wpdb;
     $match = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM {$wpdb->prefix}sgep_matches 
         WHERE cliente_id = %d AND especialista_id = %d 
@@ -251,7 +253,6 @@ if ($especialista_id > 0) {
     // Listado de especialistas recomendados
     
     // Obtener matches del cliente
-    global $wpdb;
     $matches = $wpdb->get_results($wpdb->prepare(
         "SELECT m.*, u.display_name as especialista_nombre 
         FROM {$wpdb->prefix}sgep_matches m
@@ -332,26 +333,26 @@ if ($especialista_id > 0) {
                         </div>
                         
                         <div class="sgep-especialista-recomendado-actions">
-                            <a href="?tab=especialistas&ver=<?php echo $especialista_id; ?>" class="sgep-button sgep-button-sm sgep-button-secondary"><?php _e('Ver perfil', 'sgep'); ?></a>
-                            <a href="?tab=citas&agendar_con=<?php echo $especialista_id; ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Agendar', 'sgep'); ?></a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else : ?>
-                <p class="sgep-no-items"><?php _e('No se encontraron especialistas recomendados. Por favor, realiza el test de compatibilidad.', 'sgep'); ?></p>
-            <?php endif; ?>
-        </div>
-        
-        <?php
-        // Mostrar enlace al directorio si existe la página
-        $pages = get_option('sgep_pages', array());
-        if (isset($pages['sgep-directorio-especialistas'])) :
-            $directorio_url = get_permalink($pages['sgep-directorio-especialistas']);
-        ?>
-            <div class="sgep-especialistas-footer">
-                <a href="<?php echo esc_url($directorio_url); ?>" class="sgep-button sgep-button-outline"><?php _e('Ver todos los especialistas', 'sgep'); ?></a>
-            </div>
-        <?php endif; ?>
-    </div>
-    <?php
+                           <a href="?tab=especialistas&ver=<?php echo $especialista_id; ?>" class="sgep-button sgep-button-sm sgep-button-secondary"><?php _e('Ver perfil', 'sgep'); ?></a>
+                           <a href="?tab=citas&agendar_con=<?php echo $especialista_id; ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Agendar', 'sgep'); ?></a>
+                       </div>
+                   </div>
+               <?php endforeach; ?>
+           <?php else : ?>
+               <p class="sgep-no-items"><?php _e('No se encontraron especialistas recomendados. Por favor, realiza el test de compatibilidad.', 'sgep'); ?></p>
+           <?php endif; ?>
+       </div>
+       
+       <?php
+       // Mostrar enlace al directorio si existe la página
+       $pages = get_option('sgep_pages', array());
+       if (isset($pages['sgep-directorio-especialistas'])) :
+           $directorio_url = get_permalink($pages['sgep-directorio-especialistas']);
+       ?>
+           <div class="sgep-especialistas-footer">
+               <a href="<?php echo esc_url($directorio_url); ?>" class="sgep-button sgep-button-outline"><?php _e('Ver todos los especialistas', 'sgep'); ?></a>
+           </div>
+       <?php endif; ?>
+   </div>
+   <?php
 }
