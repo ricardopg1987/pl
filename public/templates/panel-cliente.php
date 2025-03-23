@@ -25,6 +25,19 @@ $test_realizado = $wpdb->get_var($wpdb->prepare(
     "SELECT id FROM {$wpdb->prefix}sgep_test_resultados WHERE cliente_id = %d LIMIT 1",
     $cliente_id
 ));
+
+// Verificar si hay parámetros para ver perfil de especialista o agendar cita
+$ver_especialista = isset($_GET['ver']) ? intval($_GET['ver']) : 0;
+$agendar_con = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+
+// Ajustar la pestaña activa en base a estos parámetros
+if ($ver_especialista > 0) {
+    $tab = 'especialistas';
+}
+
+if ($agendar_con > 0) {
+    $tab = 'citas';
+}
 ?>
 
 <div class="sgep-panel-container">
@@ -61,11 +74,9 @@ $test_realizado = $wpdb->get_var($wpdb->prepare(
                 <li class="<?php echo $tab === 'perfil' ? 'active' : ''; ?>">
                     <a href="?tab=perfil"><?php _e('Mi Perfil', 'sgep'); ?></a>
                 </li>
-                <?php if ($test_realizado) : ?>
                 <li class="<?php echo $tab === 'especialistas' ? 'active' : ''; ?>">
-                    <a href="?tab=especialistas"><?php _e('Mis Especialistas', 'sgep'); ?></a>
+                    <a href="?tab=especialistas"><?php _e('Especialistas', 'sgep'); ?></a>
                 </li>
-                <?php endif; ?>
                 <li class="<?php echo $tab === 'citas' ? 'active' : ''; ?>">
                     <a href="?tab=citas"><?php _e('Mis Citas', 'sgep'); ?></a>
                 </li>
@@ -94,10 +105,18 @@ $test_realizado = $wpdb->get_var($wpdb->prepare(
                     break;
                     
                 case 'especialistas':
+                    // Pasar el ID del especialista a la vista si es necesario ver un perfil específico
+                    if ($ver_especialista > 0) {
+                        $_GET['ver'] = $ver_especialista;
+                    }
                     include(SGEP_PLUGIN_DIR . 'public/templates/panel-cliente/especialistas.php');
                     break;
                     
                 case 'citas':
+                    // Pasar el ID del especialista a la vista si es necesario agendar con uno específico
+                    if ($agendar_con > 0) {
+                        $_GET['agendar_con'] = $agendar_con;
+                    }
                     include(SGEP_PLUGIN_DIR . 'public/templates/panel-cliente/citas.php');
                     break;
                     

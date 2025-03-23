@@ -10,11 +10,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Declarar $wpdb como global
+global $wpdb;
+
 // Obtener especialista actual
 $especialista_id = get_current_user_id();
 
 // Obtener disponibilidad actual
-global $wpdb;
 $disponibilidad = $wpdb->get_results($wpdb->prepare(
     "SELECT * FROM {$wpdb->prefix}sgep_disponibilidad WHERE especialista_id = %d ORDER BY dia_semana, hora_inicio",
     $especialista_id

@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Declarar $wpdb como global
+global $wpdb;
+
 // Obtener usuario actual
 $especialista_id = get_current_user_id();
 
@@ -21,7 +24,6 @@ $destinatario_id = isset($_GET['cliente_id']) ? intval($_GET['cliente_id']) : 0;
 // Si es para ver un mensaje específico
 if ($accion === 'ver' && $mensaje_id > 0) {
     // Obtener el mensaje
-    global $wpdb;
     $mensaje = $wpdb->get_row($wpdb->prepare(
         "SELECT m.*, 
             r.display_name as remitente_nombre, r.user_email as remitente_email,
@@ -104,7 +106,6 @@ if ($accion === 'ver' && $mensaje_id > 0) {
     <?php
 } elseif ($accion === 'nuevo') {
     // Formulario para enviar nuevo mensaje
-    global $wpdb;
     
     // Si se especificó un destinatario, obtener sus datos
     $destinatario_nombre = '';
@@ -176,7 +177,6 @@ if ($accion === 'ver' && $mensaje_id > 0) {
     <?php
 } else {
     // Listado de mensajes
-    global $wpdb;
     
     // Obtener mensajes recibidos
     $mensajes_recibidos = $wpdb->get_results($wpdb->prepare(

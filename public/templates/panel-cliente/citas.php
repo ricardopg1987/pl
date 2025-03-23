@@ -16,7 +16,15 @@ $cliente_id = get_current_user_id();
 // Verificar acción
 $accion = isset($_GET['accion']) ? sanitize_text_field($_GET['accion']) : '';
 $cita_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$especialista_id = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+
+// Verificar si hay un parámetro agendar_con desde los resultados del test
+$agendar_con = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+if ($agendar_con > 0) {
+    $accion = 'agendar';
+    $especialista_id = $agendar_con;
+} else {
+    $especialista_id = isset($_GET['especialista_id']) ? intval($_GET['especialista_id']) : 0;
+}
 
 // Filtro
 $filtro = isset($_GET['filtro']) ? sanitize_text_field($_GET['filtro']) : '';

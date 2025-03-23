@@ -21,6 +21,12 @@ $accion = isset($_GET['accion']) ? sanitize_text_field($_GET['accion']) : '';
 $especialista_id = isset($_GET['ver']) ? intval($_GET['ver']) : 0;
 
 // Si es para ver un especialista específico
+// Verificar si viene de un enlace "Ver Perfil" desde los resultados del test
+$ver_especialista = isset($_GET['ver']) ? intval($_GET['ver']) : 0;
+if ($ver_especialista > 0) {
+    $especialista_id = $ver_especialista;
+}
+
 if ($especialista_id > 0) {
     // Obtener datos del especialista
     $especialista = get_userdata($especialista_id);
@@ -30,6 +36,10 @@ if ($especialista_id > 0) {
         echo '<p class="sgep-error">' . __('Especialista no encontrado.', 'sgep') . '</p>';
         return;
     }
+
+    
+    // Código para mostrar el perfil del especialista...
+    // (aquí iría el resto del código de visualización del perfil)
     
     // Obtener meta datos
     $especialidad = get_user_meta($especialista_id, 'sgep_especialidad', true);

@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 // Obtener páginas
 $pages = get_option('sgep_pages', array());
 $directorio_url = isset($pages['sgep-directorio-especialistas']) ? get_permalink($pages['sgep-directorio-especialistas']) : '#';
+$panel_cliente_url = isset($pages['sgep-panel-cliente']) ? get_permalink($pages['sgep-panel-cliente']) : '#';
 ?>
 
 <div class="sgep-resultados-match-container">
@@ -105,8 +106,13 @@ $directorio_url = isset($pages['sgep-directorio-especialistas']) ? get_permalink
                     </div>
                     
                     <div class="sgep-match-actions">
-                        <a href="?ver_especialista=<?php echo $match->especialista_id; ?>" class="sgep-button sgep-button-secondary"><?php _e('Ver Perfil', 'sgep'); ?></a>
-                        <a href="?agendar_con=<?php echo $match->especialista_id; ?>" class="sgep-button sgep-button-primary"><?php _e('Agendar Cita', 'sgep'); ?></a>
+                        <?php
+                        // Enlaces correctos con rutas completas
+                        $ver_perfil_url = add_query_arg('ver', $match->especialista_id, $panel_cliente_url . '?tab=especialistas');
+                        $agendar_cita_url = add_query_arg('agendar_con', $match->especialista_id, $panel_cliente_url . '?tab=citas');
+                        ?>
+                        <a href="<?php echo esc_url($ver_perfil_url); ?>" class="sgep-button sgep-button-secondary"><?php _e('Ver Perfil', 'sgep'); ?></a>
+                        <a href="<?php echo esc_url($agendar_cita_url); ?>" class="sgep-button sgep-button-primary"><?php _e('Agendar Cita', 'sgep'); ?></a>
                     </div>
                 </div>
             <?php endforeach; ?>

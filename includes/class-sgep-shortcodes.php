@@ -249,14 +249,33 @@ class SGEP_Shortcodes {
         // Obtener pestañas y acción actual
         $tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'dashboard';
         
-        // Redireccionar al test si no lo ha completado
+        // Verificar si se está intentando ver un especialista o agendar una cita desde los resultados del test
+        $ver_especialista = isset($_GET['ver']) ? intval($_GET['ver']) : 0;
+        $agendar_con = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+        
+        // Redirigir a la pestaña correcta con los parámetros necesarios
+        if ($ver_especialista > 0) {
+            $tab = 'especialistas';
+            $_GET['ver'] = $ver_especialista;
+        }
+        
+        if ($agendar_con > 0) {
+            $tab = 'citas';
+            $_GET['agendar_con'] = $agendar_con;
+        }
+        
+        // Redireccionar al test si no lo ha completado, pero permitir ver perfiles y agendar citas
         global $wpdb;
         $test_realizado = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}sgep_test_resultados WHERE cliente_id = %d LIMIT 1",
             $user_id
         ));
         
-        if (!$test_realizado && $tab !== 'test') {
+        // Solo redirigir si no ha realizado el test y no está intentando ver un perfil o agendar una cita
+        $ver_especialista = isset($_GET['ver']) ? intval($_GET['ver']) : 0;
+        $agendar_con = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+        
+        if (!$test_realizado && $tab !== 'test' && $ver_especialista <= 0 && $agendar_con <= 0) {
             $pages = get_option('sgep_pages', array());
             $test_url = isset($pages['sgep-test-match']) ? get_permalink($pages['sgep-test-match']) : '#';
             
@@ -387,17 +406,21 @@ class SGEP_Shortcodes {
     
     /**
      * Calcula los matches entre el cliente y los especialistas
+     * Versión mejorada para corregir los problemas de matching
      */
     private function calcular_matches($cliente_id, $test_id, $respuestas) {
         global $wpdb;
         
         // Registrar los datos enviados para diagnóstico
-        error_log('SGEP Test Input - Cliente ID: ' . $cliente_id . ', Test ID: ' . $test_id);
+        error_log('SGEP Test Match - Cliente ID: ' . $cliente_id . ', Test ID: ' . $test_id);
         error_log('SGEP Test Respuestas: ' . print_r($respuestas, true));
         
         // Obtener todos los especialistas activos
         $roles = new SGEP_Roles();
         $especialistas = $roles->get_all_especialistas();
+        
+        // Depuración extendida
+        error_log('SGEP Debug: Número de especialistas encontrados: ' . count($especialistas));
         
         // Verificar si hay especialistas
         if (empty($especialistas)) {
@@ -413,20 +436,39 @@ class SGEP_Shortcodes {
         
         $matches = array();
         
+        // Obtener metadatos del cliente para comparar
+        $cliente_genero_preferido = isset($respuestas[4]) ? $respuestas[4] : 'indiferente';
+        $cliente_modalidad = isset($respuestas[3]) ? $respuestas[3] : 'ambas';
+        $cliente_enfoque = isset($respuestas[2]) ? $respuestas[2] : 'ambos';
+        $cliente_experiencia = isset($respuestas[5]) ? $respuestas[5] : 'indiferente';
+        $cliente_areas = isset($respuestas[1]) && is_array($respuestas[1]) ? $respuestas[1] : array();
+        
         foreach ($especialistas as $especialista) {
             $especialista_id = $especialista->ID;
             
+            // Depurar meta datos del especialista
+            error_log('SGEP Debug: Procesando especialista ID: ' . $especialista_id . ' - ' . $especialista->display_name);
+            
             // Obtener metadatos del especialista
-            $especialidades = get_user_meta($especialista_id, 'sgep_habilidades', true);
-            if (!is_array($especialidades)) {
-                $especialidades = array();
+            $especialista_habilidades = get_user_meta($especialista_id, 'sgep_habilidades', true);
+            if (!is_array($especialista_habilidades)) {
+                $especialista_habilidades = array();
+                error_log('SGEP Debug: Especialista sin habilidades');
             }
             
-            $enfoque = get_user_meta($especialista_id, 'sgep_metodologias', true);
-            $modalidad_online = get_user_meta($especialista_id, 'sgep_acepta_online', true);
-            $modalidad_presencial = get_user_meta($especialista_id, 'sgep_acepta_presencial', true);
-            $genero = get_user_meta($especialista_id, 'sgep_genero', true);
-            $experiencia_years = (int) get_user_meta($especialista_id, 'sgep_experiencia', true);
+            error_log('SGEP Debug: Habilidades: ' . print_r($especialista_habilidades, true));
+            
+            $especialista_enfoque = get_user_meta($especialista_id, 'sgep_metodologias', true);
+            $especialista_online = (bool)get_user_meta($especialista_id, 'sgep_acepta_online', true);
+            $especialista_presencial = (bool)get_user_meta($especialista_id, 'sgep_acepta_presencial', true);
+            $especialista_genero = get_user_meta($especialista_id, 'sgep_genero', true);
+            $especialista_experiencia = (int)get_user_meta($especialista_id, 'sgep_experiencia', true);
+            
+            error_log('SGEP Debug: Enfoque: ' . $especialista_enfoque);
+            error_log('SGEP Debug: Online: ' . ($especialista_online ? 'Sí' : 'No'));
+            error_log('SGEP Debug: Presencial: ' . ($especialista_presencial ? 'Sí' : 'No'));
+            error_log('SGEP Debug: Género: ' . $especialista_genero);
+            error_log('SGEP Debug: Experiencia: ' . $especialista_experiencia);
             
             // Verificar si el especialista tiene disponibilidad configurada
             $tiene_disponibilidad = $wpdb->get_var($wpdb->prepare(
@@ -438,47 +480,56 @@ class SGEP_Shortcodes {
             $puntaje = 50;
             $log_puntaje = array(); // Para debug
             
-            // Ponderar según áreas de interés/especialidades (hasta 25 puntos)
-            if (isset($respuestas[1]) && is_array($respuestas[1])) {
-                $areas_match = array_intersect($respuestas[1], $especialidades);
-                $areas_score = min(count($areas_match) * 5, 25);
-                $puntaje += $areas_score;
-                $log_puntaje['areas'] = $areas_score;
+            // 1. Ponderar según áreas de interés/especialidades (hasta 25 puntos)
+            if (!empty($cliente_areas)) {
+                $areas_match = array_intersect($cliente_areas, $especialista_habilidades);
+                $areas_count = count($areas_match);
+                $total_areas = count($cliente_areas);
+                
+                if ($total_areas > 0) {
+                    $areas_score = min(($areas_count / $total_areas) * 25, 25);
+                    $puntaje += $areas_score;
+                    $log_puntaje['areas'] = $areas_score;
+                    error_log('SGEP Debug: Score áreas: ' . $areas_score);
+                }
                 
                 // Bonus por match con intereses del perfil del cliente
                 if (!empty($intereses_cliente)) {
-                    $intereses_match = array_intersect($intereses_cliente, $especialidades);
+                    $intereses_match = array_intersect($intereses_cliente, $especialista_habilidades);
                     $intereses_score = min(count($intereses_match) * 2, 10);
                     $puntaje += $intereses_score;
                     $log_puntaje['intereses_perfil'] = $intereses_score;
+                    error_log('SGEP Debug: Score intereses: ' . $intereses_score);
                 }
             }
             
-            // Ponderar según enfoque (hasta 10 puntos)
-            if (isset($respuestas[2]) && !empty($enfoque)) {
+            // 2. Ponderar según enfoque (hasta 10 puntos)
+            if (!empty($cliente_enfoque) && !empty($especialista_enfoque)) {
                 $enfoque_score = 0;
-                if ($respuestas[2] === $enfoque) {
+                if ($cliente_enfoque === $especialista_enfoque) {
                     $enfoque_score = 10; // Match exacto
-                } elseif ($respuestas[2] === 'ambos' || $enfoque === 'ambos') {
+                } elseif ($cliente_enfoque === 'ambos' || $especialista_enfoque === 'ambos') {
                     $enfoque_score = 7; // Enfoque balanceado
                 } else {
                     $enfoque_score = 3; // Sin match pero hay enfoque
                 }
                 $puntaje += $enfoque_score;
                 $log_puntaje['enfoque'] = $enfoque_score;
+                error_log('SGEP Debug: Score enfoque: ' . $enfoque_score);
             }
             
-            // Ponderar según modalidad (hasta 15 puntos)
-            if (isset($respuestas[3])) {
+            // 3. Ponderar según modalidad (hasta 15 puntos)
+            if (!empty($cliente_modalidad)) {
                 $modalidad_score = 0;
-                if ($respuestas[3] === 'online' && $modalidad_online) {
+                
+                if ($cliente_modalidad === 'online' && $especialista_online) {
                     $modalidad_score = 15;
-                } elseif ($respuestas[3] === 'presencial' && $modalidad_presencial) {
+                } elseif ($cliente_modalidad === 'presencial' && $especialista_presencial) {
                     $modalidad_score = 15;
-                } elseif ($respuestas[3] === 'ambas') {
-                    if ($modalidad_online && $modalidad_presencial) {
+                } elseif ($cliente_modalidad === 'ambas') {
+                    if ($especialista_online && $especialista_presencial) {
                         $modalidad_score = 15; // Prefiere ambas y ofrece ambas
-                    } elseif ($modalidad_online || $modalidad_presencial) {
+                    } elseif ($especialista_online || $especialista_presencial) {
                         $modalidad_score = 8; // Prefiere ambas pero ofrece una
                     }
                 } else {
@@ -487,53 +538,68 @@ class SGEP_Shortcodes {
                 }
                 $puntaje += $modalidad_score;
                 $log_puntaje['modalidad'] = $modalidad_score;
+                error_log('SGEP Debug: Score modalidad: ' . $modalidad_score);
             }
             
-            // Ponderar según género (hasta 10 puntos)
-            if (isset($respuestas[4]) && !empty($genero)) {
+            // 4. Ponderar según género (hasta 10 puntos)
+            if (!empty($cliente_genero_preferido) && !empty($especialista_genero)) {
                 $genero_score = 0;
-                if ($respuestas[4] === $genero) {
+                if ($cliente_genero_preferido === $especialista_genero) {
                     $genero_score = 10; // Match exacto
-                } elseif ($respuestas[4] === 'indiferente') {
+                } elseif ($cliente_genero_preferido === 'indiferente') {
                     $genero_score = 10; // No tiene preferencia
                 }
                 $puntaje += $genero_score;
                 $log_puntaje['genero'] = $genero_score;
+                error_log('SGEP Debug: Score género: ' . $genero_score);
             }
             
-            // Ponderar según experiencia (hasta 10 puntos)
-            if (isset($respuestas[5])) {
+            // 5. Ponderar según experiencia (hasta 10 puntos)
+            if (!empty($cliente_experiencia)) {
                 $experiencia_score = 0;
-                if ($respuestas[5] === 'junior' && $experiencia_years < 5) {
+                
+                // Asignar puntaje según la experiencia requerida y la real
+                if ($cliente_experiencia === 'junior' && $especialista_experiencia < 5) {
                     $experiencia_score = 10;
-                } elseif ($respuestas[5] === 'mid' && $experiencia_years >= 5 && $experiencia_years <= 10) {
+                } elseif ($cliente_experiencia === 'mid' && $especialista_experiencia >= 5 && $especialista_experiencia <= 10) {
                     $experiencia_score = 10;
-                } elseif ($respuestas[5] === 'senior' && $experiencia_years > 10) {
+                } elseif ($cliente_experiencia === 'senior' && $especialista_experiencia > 10) {
                     $experiencia_score = 10;
-                } elseif ($respuestas[5] === 'indiferente') {
+                } elseif ($cliente_experiencia === 'indiferente') {
                     $experiencia_score = 10;
                 } else {
                     // Asignar puntos parciales si la experiencia está cerca
-                    if ($respuestas[5] === 'junior' && $experiencia_years < 7) {
+                    if ($cliente_experiencia === 'junior' && $especialista_experiencia < 7) {
                         $experiencia_score = 5;
-                    } elseif ($respuestas[5] === 'mid' && $experiencia_years >= 3 && $experiencia_years <= 12) {
+                    } elseif ($cliente_experiencia === 'mid' && $especialista_experiencia >= 3 && $especialista_experiencia <= 12) {
                         $experiencia_score = 5;
-                    } elseif ($respuestas[5] === 'senior' && $experiencia_years > 8) {
+                    } elseif ($cliente_experiencia === 'senior' && $especialista_experiencia > 8) {
                         $experiencia_score = 5;
                     }
                 }
                 $puntaje += $experiencia_score;
                 $log_puntaje['experiencia'] = $experiencia_score;
+                error_log('SGEP Debug: Score experiencia: ' . $experiencia_score);
             }
             
-            // Bonus por disponibilidad configurada
+            // 6. Bonus por disponibilidad configurada (5 puntos)
             if ($tiene_disponibilidad > 0) {
                 $puntaje += 5;
                 $log_puntaje['disponibilidad'] = 5;
+                error_log('SGEP Debug: Score disponibilidad: 5');
             }
             
             // Asegurar que el puntaje esté entre 0 y 100
             $puntaje = min(100, max(0, $puntaje));
+            
+            // Convertir el puntaje a un valor entre 0-100 (normalizando)
+            $puntaje_normalizado = round($puntaje);
+            
+            // Registrar el match en el log para depuración
+            error_log(sprintf('Match para especialista %d (%s): %d puntos', 
+                $especialista_id, 
+                $especialista->display_name, 
+                $puntaje_normalizado));
             
             // Guardar match en la base de datos
             $wpdb->insert(
@@ -542,7 +608,7 @@ class SGEP_Shortcodes {
                     'cliente_id' => $cliente_id,
                     'especialista_id' => $especialista_id,
                     'test_resultado_id' => $test_id,
-                    'puntaje' => $puntaje,
+                    'puntaje' => $puntaje_normalizado,
                     'created_at' => current_time('mysql')
                 )
             );
@@ -550,9 +616,38 @@ class SGEP_Shortcodes {
             // Guardar en array para procesar después
             $matches[] = array(
                 'especialista_id' => $especialista_id,
-                'puntaje' => $puntaje,
+                'puntaje' => $puntaje_normalizado,
                 'log' => $log_puntaje
             );
+        }
+        
+        // Si no hay matches pero hay especialistas, asignar todos con un puntaje mínimo
+        if (empty($matches) && !empty($especialistas)) {
+            error_log('SGEP Debug: No se encontraron matches, añadiendo todos los especialistas con puntaje mínimo');
+            
+            foreach ($especialistas as $especialista) {
+                $match_default = array(
+                    'especialista_id' => $especialista->ID,
+                    'puntaje' => 40, // Puntaje mínimo
+                    'log' => array('default_match' => true)
+                );
+                
+                $matches[] = $match_default;
+                
+                // Guardar en la base de datos
+                $wpdb->insert(
+                    $wpdb->prefix . 'sgep_matches',
+                    array(
+                        'cliente_id' => $cliente_id,
+                        'especialista_id' => $especialista->ID,
+                        'test_resultado_id' => $test_id,
+                        'puntaje' => 40,
+                        'created_at' => current_time('mysql')
+                    )
+                );
+                
+                error_log('SGEP Debug: Añadido match por defecto para especialista ID: ' . $especialista->ID);
+            }
         }
         
         // Actualizar resultado del test con la lista ordenada de matches
@@ -560,6 +655,7 @@ class SGEP_Shortcodes {
             return $b['puntaje'] - $a['puntaje']; // Ordenar de mayor a menor
         });
         
+        // Actualizar el campo resultado del test con los matches calculados
         $wpdb->update(
             $wpdb->prefix . 'sgep_test_resultados',
             array('resultado' => serialize($matches)),
@@ -611,6 +707,31 @@ class SGEP_Shortcodes {
             "SELECT * FROM {$wpdb->prefix}sgep_matches WHERE cliente_id = %d AND test_resultado_id = %d ORDER BY puntaje DESC LIMIT 5",
             $user_id, $test_resultado->id
         ));
+        
+        // Si no hay matches, usar todos los especialistas disponibles
+        if (empty($matches)) {
+            error_log('SGEP Debug: No hay matches en la BD, mostrando todos los especialistas');
+            
+            // Obtener todos los especialistas
+            $roles = new SGEP_Roles();
+            $especialistas = $roles->get_all_especialistas();
+            
+            foreach ($especialistas as $especialista) {
+                // Crear objeto similar al de los matches
+                $match = new stdClass();
+                $match->cliente_id = $user_id;
+                $match->especialista_id = $especialista->ID;
+                $match->test_resultado_id = $test_resultado->id;
+                $match->puntaje = 40; // Puntaje por defecto
+                
+                $matches[] = $match;
+            }
+        }
+        
+        // Obtener páginas
+        $pages = get_option('sgep_pages', array());
+        $directorio_url = isset($pages['sgep-directorio-especialistas']) ? get_permalink($pages['sgep-directorio-especialistas']) : '#';
+        $panel_cliente_url = isset($pages['sgep-panel-cliente']) ? get_permalink($pages['sgep-panel-cliente']) : '#';
         
         // Renderizar resultados
         ob_start();
