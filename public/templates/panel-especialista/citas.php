@@ -1,8 +1,8 @@
 <?php
 /**
- * Plantilla para la pestaña de citas del panel de cliente
+ * Plantilla para la pestaña de citas del panel de especialista
  * 
- * Ruta: /public/templates/panel-cliente/citas.php
+ * Ruta: /public/templates/panel-especialista/citas.php
  */
 
 // Evitar acceso directo
@@ -10,21 +10,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Obtener cliente actual
-$cliente_id = get_current_user_id();
+// Declarar $wpdb como global - ESTA ES LA CORRECCIÓN PRINCIPAL
+global $wpdb;
+
+// Obtener especialista actual
+$especialista_id = get_current_user_id();
 
 // Verificar acción
 $accion = isset($_GET['accion']) ? sanitize_text_field($_GET['accion']) : '';
 $cita_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-
-// Verificar si hay un parámetro agendar_con desde los resultados del test
-$agendar_con = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
-if ($agendar_con > 0) {
-    $accion = 'agendar';
-    $especialista_id = $agendar_con;
-} else {
-    $especialista_id = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
-}
 
 // Filtro
 $filtro = isset($_GET['filtro']) ? sanitize_text_field($_GET['filtro']) : '';
@@ -290,3 +284,4 @@ if ($accion === 'ver' && $cita_id > 0) {
     </div>
     <?php
 }
+?>
