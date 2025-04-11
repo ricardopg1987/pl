@@ -746,4 +746,391 @@ class SGEP_Ajax {
         
         wp_mail($destinatario->user_email, $asunto, $contenido);
     }
+    /**
+ * Añade estas funciones a la clase SGEP_Ajax en includes/class-sgep-ajax.php
+ * Puedes añadirlas justo antes del cierre de la clase (antes del último "}")
+ */
+
+/**
+ * Obtener detalles de un producto
+ */
+public function obtener_producto_detalles() {
+    // Verificar nonce
+    check_ajax_referer('sgep_ajax_nonce', 'nonce');
+    
+    // Obtener ID del producto
+    $producto_id = isset($_GET['producto_id']) ? intval($_GET['producto_id']) : 0;
+    
+    if ($producto_id <= 0) {
+        wp_send_json_error(__('ID de producto no válido', 'sgep'));
+        return;
+    }
+    
+    // Obtener datos del producto
+    global $wpdb;
+    $producto = $wpdb->get_row($wpdb->prepare(
+        "SELECT p.*, e.display_name as especialista_nombre 
+         FROM {$wpdb->prefix}sgep_productos p
+         LEFT JOIN {$wpdb->users} e ON p.especialista_id = e.ID
+         WHERE p.id = %d",
+        $producto_id
+    ));
+    
+    if (!$producto) {
+        wp_send_json_error(__('Producto no encontrado', 'sgep'));
+        return;
+    }
+    
+    // Construir HTML para el modal
+    ob_start();
+    ?>
+    <div class="sgep-producto-detalle">
+        <h3><?php echo esc_html($producto->nombre); ?></h3>
+        
+        <?php if (!empty($producto->categoria)) : ?>
+            <div class="sgep-producto-detalle-categoria">
+                <?php 
+                $categorias = array(
+                    'libros' => __('Libros', 'sgep'),
+                    'cursos' => __('Cursos', 'sgep'),
+                    'accesorios' => __('Accesorios', 'sgep'),
+                    'esencias' => __('Esencias', 'sgep'),
+                    'terapias' => __('Terapias', 'sgep'),
+                    'aceites' => __('Aceites', 'sgep'),
+                    'cristales' => __('Cristales', 'sgep'),
+                    'otros' => __('Otros', 'sgep'),
+                );
+                
+                echo isset($categorias[$producto->categoria]) ? 
+                    esc_html($categorias[$producto->categoria]) : 
+                    esc_html($producto->categoria);
+                ?>
+            </div>
+        <?php endif; ?>
+        
+        <div class="sgep-producto-detalle-imagen">
+            <?php if (!empty($producto->imagen_url)) : ?>
+                <img src="<?php echo esc_url($producto->imagen_url); ?>" alt="<?php echo esc_attr($producto->nombre); ?>">
+            <?php endif; ?>
+        </div>
+        
+        <div class="sgep-producto-detalle-info">
+            <div class="sgep-producto-detalle-precio">
+                <strong><?php _e('Precio:', 'sgep'); ?></strong> <?php echo esc_html($producto->precio); ?>
+            </div>
+            
+            <?php if (!empty($producto->descripcion)) : ?>
+                <div class="sgep-producto-detalle-descripcion">
+                    <strong><?php _e('Descripción:', 'sgep'); ?></strong>
+                    <p><?php echo nl2br(esc_html($producto->descripcion)); ?></p>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($producto->sku)) : ?>
+                <div class="sgep-producto-detalle-sku">
+                    <strong><?php _e('SKU:', 'sgep'); ?></strong> <?php echo esc_html($producto->sku); ?>
+                </div>
+            <?php endif; ?>
+            
+            <div class="sgep-producto-detalle-stock">
+                <strong><?php _e('Disponibilidad:', 'sgep'); ?></strong> 
+                <?php 
+                if ($producto->stock > 0) {
+                    echo sprintf(__('%d unidades disponibles', 'sgep'), $producto->stock);
+                } elseif ($producto->stock == 0) {
+                    echo __('Producto digital / Stock ilimitado', 'sgep');
+                } else {
+                    echo __('Agotado', 'sgep');
+                }
+                ?>
+            </div>
+            
+            <div class="sgep-producto-detalle-especialista">
+                <strong><?php _e('Creado por:', 'sgep'); ?></strong> <?php echo esc_html($producto->especialista_nombre); ?>
+            </div>
+        </div>
+        
+        <?php if ($producto->stock >= 0) : ?>
+            <div class="sgep-producto-detalle-acciones">
+                <a href="#" class="sgep-button sgep-button-primary sgep-comprar-producto" 
+                   data-id="<?php echo esc_attr($producto->id); ?>"
+                   data-nombre="<?php echo esc_attr($producto->nombre); ?>"
+                   data-precio="<?php echo esc_attr($producto->precio); ?>">
+                    <?php _e('Comprar ahora', 'sgep'); ?>
+                </a>
+            </div>
+        <?php else : ?>
+            <div class="sgep-producto-detalle-agotado">
+                <?php _e('Producto agotado', 'sgep'); ?>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+    $html = ob_get_clean();
+    
+    wp_send_json_success(array(
+        'html' => $html
+    ));
+}
+
+/**
+ * Procesar compra de producto
+ */
+public function comprar_producto() {
+    // Verificar nonce
+    check_ajax_referer('sgep_ajax_nonce', 'nonce');
+    
+    // Verificar si el usuario está logueado
+    if (!is_user_logged_in()) {
+        wp_send_json_error(__('Debes iniciar sesión para realizar esta acción.', 'sgep'));
+        return;
+    }
+    
+    // Obtener ID del producto
+    $producto_id = isset($_POST['producto_id']) ? intval($_POST['producto_id']) : 0;
+    
+    if ($producto_id <= 0) {
+        wp_send_json_error(__('ID de producto no válido', 'sgep'));
+        return;
+    }
+    
+    // Obtener datos del producto
+    global $wpdb;
+    $producto = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}sgep_productos WHERE id = %d",
+        $producto_id
+    ));
+    
+    if (!$producto) {
+        wp_send_json_error(__('Producto no encontrado', 'sgep'));
+        return;
+    }
+    
+    // Verificar disponibilidad
+    if ($producto->stock < 0) {
+        wp_send_json_error(__('Producto agotado', 'sgep'));
+        return;
+    }
+    
+    // Obtener ID del cliente
+    $cliente_id = get_current_user_id();
+    
+    // Verificar si la tabla de pedidos existe
+    $table_pedidos = $wpdb->prefix . 'sgep_pedidos';
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table_pedidos'") != $table_pedidos) {
+        // Crear tabla si no existe
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $sql = "CREATE TABLE $table_pedidos (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            cliente_id bigint(20) NOT NULL,
+            fecha datetime NOT NULL,
+            estado varchar(50) NOT NULL DEFAULT 'pendiente',
+            total decimal(10,2) NOT NULL,
+            notas text,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+        
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+        
+        // Crear tabla para detalles de pedido
+        $table_detalles = $wpdb->prefix . 'sgep_pedidos_detalle';
+        $sql = "CREATE TABLE $table_detalles (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            pedido_id bigint(20) NOT NULL,
+            producto_id bigint(20) NOT NULL,
+            cantidad int(11) NOT NULL DEFAULT 1,
+            precio_unitario decimal(10,2) NOT NULL,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+        dbDelta($sql);
+    }
+    
+    // Crear pedido
+    $wpdb->insert(
+        $table_pedidos,
+        array(
+            'cliente_id' => $cliente_id,
+            'fecha' => current_time('mysql'),
+            'estado' => 'pendiente',
+            'total' => $producto->precio,
+            'notas' => sprintf(__('Compra del producto %s', 'sgep'), $producto->nombre)
+        )
+    );
+    
+    $pedido_id = $wpdb->insert_id;
+    
+    // Agregar detalle de pedido
+    $table_detalles = $wpdb->prefix . 'sgep_pedidos_detalle';
+    $wpdb->insert(
+        $table_detalles,
+        array(
+            'pedido_id' => $pedido_id,
+            'producto_id' => $producto_id,
+            'cantidad' => 1,
+            'precio_unitario' => $producto->precio
+        )
+    );
+    
+    // Actualizar stock del producto si no es ilimitado
+    if ($producto->stock > 0) {
+        $wpdb->update(
+            $wpdb->prefix . 'sgep_productos',
+            array('stock' => $producto->stock - 1),
+            array('id' => $producto_id)
+        );
+    }
+    
+    // Enviar notificación al especialista
+    $this->enviar_notificacion_pedido($pedido_id);
+    
+    wp_send_json_success(array(
+        'message' => sprintf(__('¡Compra realizada con éxito! Tu pedido #%d ha sido registrado y está en proceso.', 'sgep'), $pedido_id)
+    ));
+}
+
+/**
+ * Enviar notificación de nuevo pedido
+ */
+private function enviar_notificacion_pedido($pedido_id) {
+    // Verificar si las notificaciones están habilitadas
+    $notificaciones = get_option('sgep_email_notifications', 1);
+    
+    if (!$notificaciones) {
+        return;
+    }
+    
+    global $wpdb;
+    
+    // Obtener datos del pedido
+    $pedido = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}sgep_pedidos WHERE id = %d",
+        $pedido_id
+    ));
+    
+    if (!$pedido) {
+        return;
+    }
+    
+    // Obtener detalles del pedido
+    $detalles = $wpdb->get_results($wpdb->prepare(
+        "SELECT d.*, p.nombre, p.especialista_id 
+         FROM {$wpdb->prefix}sgep_pedidos_detalle d
+         JOIN {$wpdb->prefix}sgep_productos p ON d.producto_id = p.id
+         WHERE d.pedido_id = %d",
+        $pedido_id
+    ));
+    
+    if (empty($detalles)) {
+        return;
+    }
+    
+    // Obtener datos del cliente
+    $cliente = get_userdata($pedido->cliente_id);
+    
+    if (!$cliente) {
+        return;
+    }
+    
+    // Para cada producto, enviar notificación al especialista correspondiente
+    foreach ($detalles as $detalle) {
+        if (empty($detalle->especialista_id)) {
+            continue; // Producto sin especialista asociado (admin)
+        }
+        
+        $especialista = get_userdata($detalle->especialista_id);
+        
+        if (!$especialista) {
+            continue;
+        }
+        
+        // Construir mensaje
+        $asunto = sprintf(__('Nuevo pedido #%d - Producto: %s', 'sgep'), $pedido_id, $detalle->nombre);
+        $mensaje = sprintf(
+            __('Hola %s,
+
+Has recibido un nuevo pedido:
+
+Pedido #: %d
+Producto: %s
+Cantidad: %d
+Precio: %s
+Cliente: %s (%s)
+Fecha: %s
+
+Por favor, ponte en contacto con el cliente para coordinar la entrega o acceso al producto.
+
+Saludos,
+Sistema de Gestión de Especialistas y Pacientes', 'sgep'),
+            $especialista->display_name,
+            $pedido_id,
+            $detalle->nombre,
+            $detalle->cantidad,
+            $detalle->precio_unitario,
+            $cliente->display_name,
+            $cliente->user_email,
+            date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($pedido->fecha))
+        );
+        
+        // Enviar correo
+        wp_mail($especialista->user_email, $asunto, $mensaje);
+    }
+    
+    // También notificar al cliente
+    $asunto_cliente = sprintf(__('Confirmación de pedido #%d', 'sgep'), $pedido_id);
+    
+    // Construir lista de productos
+    $productos_lista = '';
+    $total = 0;
+    
+    foreach ($detalles as $detalle) {
+        $productos_lista .= sprintf(
+            "- %s: %s x %d = %s\n",
+            $detalle->nombre,
+            $detalle->precio_unitario,
+            $detalle->cantidad,
+            number_format($detalle->precio_unitario * $detalle->cantidad, 2)
+        );
+        
+        $total += $detalle->precio_unitario * $detalle->cantidad;
+    }
+    
+    $mensaje_cliente = sprintf(
+        __('Hola %s,
+
+Gracias por tu compra. A continuación, los detalles de tu pedido:
+
+Pedido #: %d
+Fecha: %s
+Estado: %s
+
+Productos:
+%s
+Total: %s
+
+El especialista se pondrá en contacto contigo próximamente para coordinar los detalles.
+
+Saludos,
+Sistema de Gestión de Especialistas y Pacientes', 'sgep'),
+        $cliente->display_name,
+        $pedido_id,
+        date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($pedido->fecha)),
+        __('Pendiente', 'sgep'),
+        $productos_lista,
+        number_format($total, 2)
+    );
+    
+    // Enviar correo al cliente
+    wp_mail($cliente->user_email, $asunto_cliente, $mensaje_cliente);
+}
+/**
+ * Agrega estas líneas al constructor de la clase SGEP_Ajax en includes/class-sgep-ajax.php
+ * Justo después de las otras acciones AJAX
+ */
+
+// Acciones AJAX para productos
+add_action('wp_ajax_sgep_obtener_producto_detalles', array($this, 'obtener_producto_detalles'));
+add_action('wp_ajax_nopriv_sgep_obtener_producto_detalles', array($this, 'obtener_producto_detalles'));
+add_action('wp_ajax_sgep_comprar_producto', array($this, 'comprar_producto'));
 }
