@@ -2274,3 +2274,282 @@
     border-radius: 5px;
     font-weight: 500;
 }
+/**
+ * Estilos para la sección de pedidos en el panel del cliente
+ * Agregar al archivo public/css/sgep-public.css
+ */
+
+/* Contenedor de pedidos */
+.sgep-pedidos-wrapper {
+    margin-bottom: 30px;
+}
+
+/* Tabla de pedidos */
+.sgep-pedidos-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.sgep-pedidos-tabla thead th {
+    padding: 12px 15px;
+    text-align: left;
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.sgep-pedidos-tabla tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    color: #555;
+}
+
+.sgep-pedidos-tabla tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.sgep-pedidos-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Estados de pedidos */
+.sgep-estado-pendiente {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.sgep-estado-procesando {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    background-color: #e3f2fd;
+    color: #0288d1;
+}
+
+.sgep-estado-completado {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.sgep-estado-cancelado {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Detalles del pedido */
+.sgep-pedido-detalle {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sgep-pedido-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.sgep-pedido-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.sgep-pedido-info {
+    margin-bottom: 30px;
+}
+
+.sgep-pedido-row {
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.sgep-pedido-label {
+    font-weight: 600;
+    width: 150px;
+    color: #666;
+}
+
+.sgep-pedido-value {
+    flex: 1;
+    color: #333;
+}
+
+.sgep-pedido-total {
+    font-weight: 700;
+    color: #0073aa;
+    font-size: 18px;
+}
+
+/* Productos del pedido */
+.sgep-pedido-productos {
+    margin-bottom: 30px;
+}
+
+.sgep-pedido-productos h4 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.sgep-pedido-productos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sgep-pedido-producto {
+    display: flex;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sgep-pedido-producto-imagen {
+    width: 80px;
+    height: 80px;
+    margin-right: 15px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sgep-pedido-producto-imagen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sgep-pedido-producto-info {
+    flex: 1;
+}
+
+.sgep-pedido-producto-info h5 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: #333;
+}
+
+.sgep-pedido-producto-categoria {
+    display: inline-block;
+    background-color: #e9ecef;
+    color: #555;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.sgep-pedido-producto-descripcion {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.sgep-pedido-producto-especialista {
+    font-size: 13px;
+    color: #777;
+}
+
+.sgep-pedido-producto-precio {
+    min-width: 150px;
+    padding-left: 15px;
+    border-left: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sgep-pedido-producto-cantidad,
+.sgep-pedido-producto-precio-unitario {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.sgep-pedido-producto-subtotal {
+    font-weight: 700;
+    color: #0073aa;
+    font-size: 16px;
+}
+
+/* Acciones cuando no hay pedidos */
+.sgep-pedidos-empty-action {
+    text-align: center;
+    padding: 30px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.sgep-pedidos-empty-action p {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+/* Footer del pedido */
+.sgep-pedido-footer {
+    margin-top: 30px;
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sgep-pedido-producto {
+        flex-direction: column;
+    }
+    
+    .sgep-pedido-producto-imagen {
+        width: 100%;
+        height: 200px;
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+    
+    .sgep-pedido-producto-precio {
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid #e9ecef;
+        padding-top: 15px;
+        margin-top: 15px;
+    }
+    
+    .sgep-pedido-row {
+        flex-direction: column;
+    }
+    
+    .sgep-pedido-label {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}

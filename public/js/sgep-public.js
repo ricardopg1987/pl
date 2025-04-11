@@ -99,7 +99,7 @@ function initCitas() {
     });
     
     // Cancelar cita - CORREGIDO
-    $('.sgep-cancelar-cita').on('click', function(e) {
+    $(document).on('click', '.sgep-cancelar-cita', function(e) {
         e.preventDefault();
         
         if (!confirm('¿Estás seguro de cancelar esta cita?')) {
@@ -148,7 +148,7 @@ function initCitas() {
     });
     
     // Confirmar cita (para especialistas) - CORREGIDO
-    $('#sgep_confirmar_cita_form').on('submit', function(e) {
+    $(document).on('submit', '#sgep_confirmar_cita_form', function(e) {
         e.preventDefault();
         
         var form = $(this);
@@ -198,4 +198,129 @@ function initCitas() {
             }
         });
     });
+
+    // Inicializar manejo de mensajes
+    $(document).on('submit', '#sgep_enviar_mensaje_form', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var btn = form.find('[type="submit"]');
+        var destinatarioId = form.find('#sgep_destinatario_id').val();
+        var asunto = form.find('#sgep_asunto').val();
+        var mensaje = form.find('#sgep_mensaje').val();
+        
+        // Validar campos
+        if (!destinatarioId || !asunto || !mensaje) {
+            alert('Por favor completa todos los campos');
+            return;
+        }
+        
+        // Deshabilitar botón mientras se procesa
+        btn.prop('disabled', true).text('Enviando...');
+        
+        // Enviar mensaje por AJAX
+        $.ajax({
+            url: sgep_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'sgep_enviar_mensaje',
+                nonce: sgep_ajax.nonce,
+                destinatario_id: destinatarioId,
+                asunto: asunto,
+                mensaje: mensaje
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Limpiar formulario
+                    form[0].reset();
+                    
+                    // Mostrar mensaje de éxito
+                    alert(response.data.message);
+                    
+                    // Redireccionar si no estamos en un modal
+                    if (!form.hasClass('sgep-mensaje-rapido-form')) {
+                        window.location.href = '?tab=mensajes';
+                    }
+                } else {
+                    alert(response.data);
+                }
+            },
+            error: function() {
+                alert('Error al enviar el mensaje. Por favor, intenta nuevamente.');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text('Enviar Mensaje');
+            }
+        });
+    });
+
+    // Tabs de mensajes
+    $('.sgep-mensajes-tabs-nav a').on('click', function(e) {
+        e.preventDefault();
+        var target = $(this).attr('href');
+        
+        // Activar la pestaña
+        $('.sgep-mensajes-tabs-nav li').removeClass('active');
+        $(this).parent().addClass('active');
+        
+        // Mostrar contenido
+        $('.sgep-mensajes-tab-panel').removeClass('active');
+        $(target).addClass('active');
+    });
+
+    // Inicializar tabs de perfil
+    $('.sgep-perfil-tabs-nav a').on('click', function(e) {
+        // Si el enlace es un enlace real (con href que no empiece con #), dejarlo pasar
+        if (this.getAttribute('href') && this.getAttribute('href').charAt(0) !== '#') {
+            return;
+        }
+        
+        e.preventDefault();
+        var target = $(this).attr('href');
+        
+        // Activar la pestaña
+        $('.sgep-perfil-tabs-nav li').removeClass('active');
+        $(this).parent().addClass('active');
+        
+        // Mostrar contenido
+        $('.sgep-perfil-tabs-content .sgep-perfil-tab-panel').removeClass('active');
+        $(target).addClass('active');
+    });
+
+    // Compra de productos
+    $(document).on('click', '.sgep-comprar-producto', function(e) {
+        e.preventDefault();
+        var productoId = $(this).data('id');
+        var productoNombre = $(this).data('nombre');
+        var productoPrecio = $(this).data('precio');
+        
+        if (confirm('¿Deseas comprar el producto "' + productoNombre + '" por ' + productoPrecio + '?')) {
+            // Implementar lógica de compra
+            $.ajax({
+                url: sgep_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'sgep_comprar_producto',
+                    nonce: sgep_ajax.nonce,
+                    producto_id: productoId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.data.message);
+                        location.reload();
+                    } else {
+                        alert(response.data);
+                    }
+                },
+                error: function() {
+                    alert('Error al procesar la compra. Por favor, intenta nuevamente.');
+                }
+            });
+        }
+    });
 }
+
+// Ejecutar la inicialización cuando el documento esté listo
+jQuery(document).ready(function($) {
+    initCitas();
+});

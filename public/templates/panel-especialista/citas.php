@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Declarar $wpdb como global - CORRECCIÓN #1
+// Declarar $wpdb como global
 global $wpdb;
 
 // Obtener especialista actual
@@ -147,7 +147,6 @@ if ($accion === 'ver' && $cita_id > 0) {
                 <h4><?php _e('Acciones', 'sgep'); ?></h4>
                 
                 <form id="sgep_confirmar_cita_form" class="sgep-form">
-                    <!-- CORRECCIÓN #2: Asegurar que el ID se pasa correctamente -->
                     <input type="hidden" id="sgep_cita_id" name="sgep_cita_id" value="<?php echo esc_attr($cita_id); ?>">
                     
                     <div class="sgep-form-field">
@@ -270,11 +269,9 @@ if ($accion === 'ver' && $cita_id > 0) {
                         </div>
                         
                         <div class="sgep-cita-actions">
-                            <!-- CORRECCIÓN #3: Asegurar enlaces correctos -->
                             <a href="?tab=citas&accion=ver&id=<?php echo intval($cita->id); ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Ver', 'sgep'); ?></a>
                             
                             <?php if ($cita->estado === 'pendiente') : ?>
-                                <!-- CORRECCIÓN #4: Asegurar que el data-id está establecido correctamente -->
                                 <a href="#" class="sgep-button sgep-button-sm sgep-button-outline sgep-cancelar-cita" data-id="<?php echo intval($cita->id); ?>"><?php _e('Cancelar', 'sgep'); ?></a>
                             <?php endif; ?>
                         </div>
@@ -285,112 +282,6 @@ if ($accion === 'ver' && $cita_id > 0) {
             <?php endif; ?>
         </div>
     </div>
-    
-    <!-- CORRECCIÓN #5: Agregar script para inicializar los manejadores de eventos -->
-    <script>
-    jQuery(document).ready(function($) {
-        // Reinicializar los controladores de eventos para los botones de cancelar
-        $('.sgep-cancelar-cita').off('click').on('click', function(e) {
-            e.preventDefault();
-            
-            if (!confirm('¿Estás seguro de cancelar esta cita?')) {
-                return;
-            }
-            
-            var btn = $(this);
-            var citaId = btn.data('id');
-            
-            // Verificar que el ID es válido
-            if (!citaId || isNaN(citaId) || citaId <= 0) {
-                alert('ID de cita inválido.');
-                return;
-            }
-            
-            // Mostrar indicador de carga
-            btn.prop('disabled', true).text('Cancelando...');
-            
-            $.ajax({
-                url: sgep_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'sgep_cancelar_cita',
-                    nonce: sgep_ajax.nonce,
-                    cita_id: citaId
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Mostrar mensaje de éxito
-                        alert(response.data.message);
-                        
-                        // Recargar página
-                        location.reload();
-                    } else {
-                        alert(response.data || 'Error al cancelar la cita.');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error AJAX:', error);
-                    alert('Error al cancelar la cita. Por favor, intenta nuevamente.');
-                },
-                complete: function() {
-                    btn.prop('disabled', false).text('Cancelar');
-                }
-            });
-        });
-        
-        // Reinicializar el formulario de confirmación
-        $('#sgep_confirmar_cita_form').off('submit').on('submit', function(e) {
-            e.preventDefault();
-            
-            var form = $(this);
-            var btn = form.find('[type="submit"]');
-            var citaId = form.find('#sgep_cita_id').val();
-            var zoomLink = form.find('#sgep_zoom_link').val();
-            var zoomId = form.find('#sgep_zoom_id').val();
-            var zoomPassword = form.find('#sgep_zoom_password').val();
-            
-            // Validaciones
-            if (!citaId || isNaN(citaId) || citaId <= 0) {
-                alert('ID de cita inválido.');
-                return;
-            }
-            
-            // Enviar petición AJAX
-            btn.prop('disabled', true).text('Confirmando...');
-            
-            $.ajax({
-                url: sgep_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'sgep_confirmar_cita',
-                    nonce: sgep_ajax.nonce,
-                    cita_id: citaId,
-                    zoom_link: zoomLink,
-                    zoom_id: zoomId,
-                    zoom_password: zoomPassword
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Mostrar mensaje de éxito
-                        alert(response.data.message);
-                        
-                        // Recargar página
-                        location.reload();
-                    } else {
-                        alert(response.data || 'Error al confirmar la cita.');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error AJAX:', error);
-                    alert('Error al confirmar la cita. Por favor, intenta nuevamente.');
-                },
-                complete: function() {
-                    btn.prop('disabled', false).text('Confirmar Cita');
-                }
-            });
-        });
-    });
-    </script>
     <?php
 }
 ?>
