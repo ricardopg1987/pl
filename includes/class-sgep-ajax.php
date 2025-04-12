@@ -33,7 +33,7 @@ class SGEP_Ajax {
         add_action('wp_ajax_nopriv_sgep_obtener_especialistas', array($this, 'obtener_especialistas'));
         add_action('wp_ajax_sgep_obtener_especialistas', array($this, 'obtener_especialistas'));
         
-        // Acciones AJAX para productos
+        // Acciones AJAX para productos - Implementación completa
         add_action('wp_ajax_sgep_obtener_producto_detalles', array($this, 'obtener_producto_detalles'));
         add_action('wp_ajax_nopriv_sgep_obtener_producto_detalles', array($this, 'obtener_producto_detalles'));
         add_action('wp_ajax_sgep_comprar_producto', array($this, 'comprar_producto'));
@@ -63,6 +63,11 @@ class SGEP_Ajax {
         
         if (empty($hora_inicio) || empty($hora_fin)) {
             wp_send_json_error(__('Debes especificar la hora de inicio y fin.', 'sgep'));
+        }
+        
+        // Validar que la hora inicio sea menor que la hora fin
+        if (strtotime($hora_inicio) >= strtotime($hora_fin)) {
+            wp_send_json_error(__('La hora de inicio debe ser anterior a la hora de fin.', 'sgep'));
         }
         
         // Insertar disponibilidad
@@ -170,6 +175,12 @@ class SGEP_Ajax {
         // Verificar disponibilidad
         $fecha_hora = $fecha . ' ' . $hora;
         $timestamp = strtotime($fecha_hora);
+        
+        // Validar fecha en el futuro
+        if ($timestamp < time()) {
+            wp_send_json_error(__('No puedes agendar una cita en el pasado.', 'sgep'));
+        }
+        
         $dia_semana = date('w', $timestamp);
         
         global $wpdb;
@@ -492,6 +503,11 @@ class SGEP_Ajax {
         $modalidad = isset($_GET['modalidad']) ? sanitize_text_field($_GET['modalidad']) : '';
         $genero = isset($_GET['genero']) ? sanitize_text_field($_GET['genero']) : '';
         
+        // Verificar nonce para peticiones de usuarios logueados
+        if (is_user_logged_in()) {
+            check_ajax_referer('sgep_ajax_nonce', 'nonce');
+        }
+        
         // Obtener todos los especialistas
         $roles = new SGEP_Roles();
         $especialistas = $roles->get_all_especialistas();
@@ -563,6 +579,20 @@ class SGEP_Ajax {
             return;
         }
         
+        // Validar formato de fecha
+        $date_parts = explode('-', $fecha);
+        if (count($date_parts) !== 3 || !checkdate((int)$date_parts[1], (int)$date_parts[2], (int)$date_parts[0])) {
+            wp_send_json_error(__('Formato de fecha inválido', 'sgep'));
+            return;
+        }
+        
+        // Verificar que la fecha sea futura
+        $fecha_timestamp = strtotime($fecha);
+        if ($fecha_timestamp < strtotime(date('Y-m-d'))) {
+            wp_send_json_error(__('No puedes seleccionar fechas pasadas', 'sgep'));
+            return;
+        }
+        
         // Obtener día de la semana de la fecha seleccionada
         $timestamp = strtotime($fecha);
         $dia_semana = date('w', $timestamp);
@@ -575,6 +605,15 @@ class SGEP_Ajax {
             ORDER BY hora_inicio",
             $especialista_id, $dia_semana
         ));
+        
+        // Si no hay disponibilidad configurada para este día
+        if (empty($disponibilidad)) {
+            wp_send_json_success(array(
+                'horas' => array(),
+                'mensaje' => __('No hay horarios disponibles para este día.', 'sgep')
+            ));
+            return;
+        }
         
         // Obtener citas ya agendadas para ese día y especialista
         $citas_agendadas = $wpdb->get_results($wpdb->prepare(
@@ -625,7 +664,7 @@ class SGEP_Ajax {
         $notificaciones = get_option('sgep_email_notifications', 1);
         
         if (!$notificaciones) {
-            return;
+            return false;
         }
         
         global $wpdb;
@@ -635,14 +674,14 @@ class SGEP_Ajax {
         ));
         
         if (!$cita) {
-            return;
+            return false;
         }
         
         $especialista = get_userdata($cita->especialista_id);
         $cliente = get_userdata($cita->cliente_id);
         
         if (!$especialista || !$cliente) {
-            return;
+            return false;
         }
         
         $fecha_hora = new DateTime($cita->fecha);
@@ -658,7 +697,7 @@ class SGEP_Ajax {
                     $fecha_formateada
                 );
                 
-                wp_mail($especialista->user_email, $asunto, $mensaje);
+                return wp_mail($especialista->user_email, $asunto, $mensaje);
                 break;
                 
             case 'confirmada':
@@ -679,7 +718,7 @@ class SGEP_Ajax {
                     );
                 }
                 
-                wp_mail($cliente->user_email, $asunto, $mensaje);
+                return wp_mail($cliente->user_email, $asunto, $mensaje);
                 break;
                 
             case 'cancelada':
@@ -706,9 +745,14 @@ class SGEP_Ajax {
                     );
                 }
                 
-                wp_mail($destinatario->user_email, $asunto, $mensaje);
+                return wp_mail($destinatario->user_email, $asunto, $mensaje);
                 break;
+                
+            default:
+                return false;
         }
+        
+        return false;
     }
     
     /**
@@ -719,7 +763,7 @@ class SGEP_Ajax {
         $notificaciones = get_option('sgep_email_notifications', 1);
         
         if (!$notificaciones) {
-            return;
+            return false;
         }
         
         global $wpdb;
@@ -729,14 +773,14 @@ class SGEP_Ajax {
         ));
         
         if (!$mensaje) {
-            return;
+            return false;
         }
         
         $remitente = get_userdata($mensaje->remitente_id);
         $destinatario = get_userdata($mensaje->destinatario_id);
         
         if (!$remitente || !$destinatario) {
-            return;
+            return false;
         }
         
         $asunto = sprintf(__('Nuevo mensaje de %s: %s', 'sgep'), $remitente->display_name, $mensaje->asunto);
@@ -746,16 +790,16 @@ class SGEP_Ajax {
             "\n\n" . $mensaje->mensaje
         );
         
-        wp_mail($destinatario->user_email, $asunto, $cuerpo);
+        return wp_mail($destinatario->user_email, $asunto, $cuerpo);
     }
     
     /**
-     * Obtener detalles de un producto
+     * Obtener detalles de producto
      */
     public function obtener_producto_detalles() {
-        // Verificar que WooCommerce esté activo
-        if (!class_exists('WooCommerce')) {
-            wp_send_json_error(__('WooCommerce no está activo.', 'sgep'));
+        // Verificar nonce para usuarios logueados
+        if (is_user_logged_in()) {
+            check_ajax_referer('sgep_ajax_nonce', 'nonce');
         }
         
         // Obtener ID del producto
@@ -763,64 +807,124 @@ class SGEP_Ajax {
         
         if ($producto_id <= 0) {
             wp_send_json_error(__('ID de producto inválido.', 'sgep'));
+            return;
         }
         
-        // Obtener producto
-        $producto = wc_get_product($producto_id);
+        // Obtener datos del producto
+        global $wpdb;
+        $producto = $wpdb->get_row($wpdb->prepare(
+            "SELECT p.*, e.display_name AS especialista_nombre 
+             FROM {$wpdb->prefix}sgep_productos p
+             LEFT JOIN {$wpdb->users} e ON p.especialista_id = e.ID
+             WHERE p.id = %d",
+            $producto_id
+        ));
         
         if (!$producto) {
             wp_send_json_error(__('El producto no existe.', 'sgep'));
+            return;
         }
         
-        // Preparar datos del producto
-        $datos = array(
-            'id' => $producto->get_id(),
-            'nombre' => $producto->get_name(),
-            'precio' => $producto->get_price(),
-            'precio_regular' => $producto->get_regular_price(),
-            'precio_venta' => $producto->get_sale_price(),
-            'descripcion' => $producto->get_description(),
-            'descripcion_corta' => $producto->get_short_description(),
-            'imagen' => get_the_post_thumbnail_url($producto_id, 'full'),
-            'url' => get_permalink($producto_id),
-            'en_oferta' => $producto->is_on_sale(),
-            'stock' => $producto->get_stock_quantity(),
-            'en_stock' => $producto->is_in_stock()
+        // Preparar la estructura HTML para el modal
+        ob_start();
+        ?>
+        <div class="sgep-producto-detalle">
+            <h3><?php echo esc_html($producto->nombre); ?></h3>
+            
+            <?php if (!empty($producto->categoria)) : ?>
+                <span class="sgep-producto-detalle-categoria">
+                    <?php 
+                    $categorias = array(
+                        'libros' => __('Libros', 'sgep'),
+                        'cursos' => __('Cursos', 'sgep'),
+                        'accesorios' => __('Accesorios', 'sgep'),
+                        'esencias' => __('Esencias', 'sgep'),
+                        'terapias' => __('Terapias', 'sgep'),
+                        'aceites' => __('Aceites', 'sgep'),
+                        'cristales' => __('Cristales', 'sgep'),
+                        'otros' => __('Otros', 'sgep'),
+                    );
+                    
+                    echo isset($categorias[$producto->categoria]) ? 
+                        esc_html($categorias[$producto->categoria]) : 
+                        esc_html($producto->categoria);
+                    ?>
+                </span>
+            <?php endif; ?>
+            
+            <div class="sgep-producto-detalle-imagen">
+                <?php if (!empty($producto->imagen_url)) : ?>
+                    <img src="<?php echo esc_url($producto->imagen_url); ?>" alt="<?php echo esc_attr($producto->nombre); ?>">
+                <?php else : ?>
+                    <div class="sgep-producto-no-imagen">
+                        <span class="dashicons dashicons-format-image"></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="sgep-producto-detalle-info">
+                <div class="sgep-producto-detalle-precio">
+                    <strong><?php _e('Precio:', 'sgep'); ?></strong> <?php echo esc_html($producto->precio); ?>
+                </div>
+                
+                <?php if (!empty($producto->descripcion)) : ?>
+                    <div class="sgep-producto-detalle-descripcion">
+                        <strong><?php _e('Descripción:', 'sgep'); ?></strong>
+                        <p><?php echo nl2br(esc_html($producto->descripcion)); ?></p>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($producto->sku)) : ?>
+                    <div class="sgep-producto-detalle-sku">
+                        <strong><?php _e('SKU:', 'sgep'); ?></strong> <?php echo esc_html($producto->sku); ?>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="sgep-producto-detalle-stock">
+                    <strong><?php _e('Disponibilidad:', 'sgep'); ?></strong> 
+                    <?php 
+                    if ($producto->stock > 0 || $producto->stock == 0) { // 0 = ilimitado
+                        echo '<span class="sgep-stock-disponible">' . __('En stock', 'sgep') . '</span>';
+                    } else {
+                        echo '<span class="sgep-stock-agotado">' . __('Agotado', 'sgep') . '</span>';
+                    }
+                    ?>
+                </div>
+                
+                <?php if (!empty($producto->especialista_nombre)) : ?>
+                    <div class="sgep-producto-detalle-especialista">
+                        <strong><?php _e('Creado por:', 'sgep'); ?></strong> <?php echo esc_html($producto->especialista_nombre); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="sgep-producto-detalle-acciones">
+                <?php if ($producto->stock > 0 || $producto->stock == 0) : // 0 = ilimitado ?>
+                    <a href="#" class="sgep-button sgep-button-primary sgep-comprar-producto" 
+                       data-id="<?php echo esc_attr($producto->id); ?>"
+                       data-nombre="<?php echo esc_attr($producto->nombre); ?>"
+                       data-precio="<?php echo esc_attr($producto->precio); ?>">
+                        <?php _e('Comprar ahora', 'sgep'); ?>
+                    </a>
+                <?php else : ?>
+                    <div class="sgep-producto-detalle-agotado">
+                        <?php _e('Producto agotado', 'sgep'); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+        $html = ob_get_clean();
+        
+        // Preparar respuesta
+        $respuesta = array(
+            'id' => $producto->id,
+            'nombre' => $producto->nombre,
+            'precio' => $producto->precio,
+            'descripcion' => $producto->descripcion,
+            'imagen_url' => $producto->imagen_url,
+            'stock' => $producto->stock,
+            'html' => $html
         );
         
-        wp_send_json_success($datos);
-    }
-    
-    /**
-     * Comprar producto (añadir al carrito y redirigir)
-     */
-    public function comprar_producto() {
-        // Verificar nonce
-        check_ajax_referer('sgep_ajax_nonce', 'nonce');
-        
-        // Verificar que WooCommerce esté activo
-        if (!class_exists('WooCommerce')) {
-            wp_send_json_error(__('WooCommerce no está activo.', 'sgep'));
-        }
-        
-        // Obtener ID del producto
-        $producto_id = isset($_POST['producto_id']) ? intval($_POST['producto_id']) : 0;
-        $cantidad = isset($_POST['cantidad']) ? intval($_POST['cantidad']) : 1;
-        
-        if ($producto_id <= 0) {
-            wp_send_json_error(__('ID de producto inválido.', 'sgep'));
-        }
-        
-        // Agregar al carrito
-        $carrito_id = WC()->cart->add_to_cart($producto_id, $cantidad);
-        
-        if (!$carrito_id) {
-            wp_send_json_error(__('Error al añadir el producto al carrito.', 'sgep'));
-        }
-        
-        wp_send_json_success(array(
-            'message' => __('Producto añadido al carrito.', 'sgep'),
-            'redirect' => wc_get_cart_url()
-        ));
-    }
-}
+        wp_send_json_success($respuesta);
