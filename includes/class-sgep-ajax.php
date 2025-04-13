@@ -796,6 +796,9 @@ class SGEP_Ajax {
     /**
      * Obtener detalles de producto
      */
+    /**
+     * Obtener detalles de producto
+     */
     public function obtener_producto_detalles() {
         // Verificar nonce para usuarios logueados
         if (is_user_logged_in()) {
@@ -928,3 +931,120 @@ class SGEP_Ajax {
         );
         
         wp_send_json_success($respuesta);
+    } // Added the missing closing curly brace here
+    
+    /**
+     * Compra de productos
+     */
+    public function comprar_producto() {
+        // Verificar nonce
+        check_ajax_referer('sgep_ajax_nonce', 'nonce');
+        
+        // Verificar usuario logueado
+        if (!is_user_logged_in()) {
+            wp_send_json_error(__('Debes iniciar sesión para realizar compras.', 'sgep'));
+            return;
+        }
+        
+        // Obtener datos
+        $producto_id = isset($_POST['producto_id']) ? intval($_POST['producto_id']) : 0;
+        
+        if ($producto_id <= 0) {
+            wp_send_json_error(__('ID de producto inválido.', 'sgep'));
+            return;
+        }
+        
+        // Obtener producto
+        global $wpdb;
+        $producto = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}sgep_productos WHERE id = %d",
+            $producto_id
+        ));
+        
+        if (!$producto) {
+            wp_send_json_error(__('El producto no existe.', 'sgep'));
+            return;
+        }
+        
+        // Verificar stock
+        if ($producto->stock < 1 && $producto->stock != 0) { // 0 significa stock ilimitado
+            wp_send_json_error(__('El producto está agotado.', 'sgep'));
+            return;
+        }
+        
+        // Crear el pedido
+        $cliente_id = get_current_user_id();
+        
+        // Verificar si existe la tabla de pedidos
+        $table_pedidos = $wpdb->prefix . 'sgep_pedidos';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_pedidos'") != $table_pedidos) {
+            // Crear la tabla de pedidos
+            $charset_collate = $wpdb->get_charset_collate();
+            
+            $sql = "CREATE TABLE $table_pedidos (
+                id bigint(20) NOT NULL AUTO_INCREMENT,
+                cliente_id bigint(20) NOT NULL,
+                fecha datetime NOT NULL,
+                estado varchar(20) NOT NULL DEFAULT 'pendiente',
+                total decimal(10,2) NOT NULL,
+                notas text,
+                PRIMARY KEY  (id)
+            ) $charset_collate;";
+            
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+            
+            // Crear tabla para detalles de pedidos
+            $table_detalles = $wpdb->prefix . 'sgep_pedidos_detalle';
+            $sql = "CREATE TABLE $table_detalles (
+                id bigint(20) NOT NULL AUTO_INCREMENT,
+                pedido_id bigint(20) NOT NULL,
+                producto_id bigint(20) NOT NULL,
+                cantidad int(11) NOT NULL DEFAULT 1,
+                precio_unitario decimal(10,2) NOT NULL,
+                PRIMARY KEY  (id)
+            ) $charset_collate;";
+            dbDelta($sql);
+        }
+        
+        // Insertar pedido
+        $wpdb->insert(
+            $table_pedidos,
+            array(
+                'cliente_id' => $cliente_id,
+                'fecha' => current_time('mysql'),
+                'estado' => 'pendiente',
+                'total' => $producto->precio,
+                'notas' => ''
+            )
+        );
+        
+        $pedido_id = $wpdb->insert_id;
+        
+        // Insertar detalle del pedido
+        $wpdb->insert(
+            $wpdb->prefix . 'sgep_pedidos_detalle',
+            array(
+                'pedido_id' => $pedido_id,
+                'producto_id' => $producto_id,
+                'cantidad' => 1,
+                'precio_unitario' => $producto->precio
+            )
+        );
+        
+        // Actualizar stock si no es ilimitado
+        if ($producto->stock > 0) {
+            $wpdb->update(
+                $wpdb->prefix . 'sgep_productos',
+                array('stock' => $producto->stock - 1),
+                array('id' => $producto_id)
+            );
+        }
+        
+        // Enviar respuesta
+        wp_send_json_success(array(
+            'message' => __('¡Compra realizada con éxito! Puedes ver tus pedidos en tu panel de cliente.', 'sgep'),
+            'pedido_id' => $pedido_id
+        ));
+    }
+}
