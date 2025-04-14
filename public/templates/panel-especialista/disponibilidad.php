@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Declarar $wpdb como global
+// Declarar $wpdb como global al inicio del archivo
 global $wpdb;
 
 // Obtener especialista actual
