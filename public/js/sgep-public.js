@@ -175,149 +175,144 @@ jQuery(document).ready(function($) {
                 alert('Por favor, completa todos los campos obligatorios.');
                 return;
             }
-            /**
- * Modificaciones a agregar a public/js/sgep-public.js
- * Agregar dentro de la función initCitas() existente
- */
+            
+            // Gestión de tabs para acciones de cita
+            $('.sgep-cita-acciones-nav a').on('click', function(e) {
+                e.preventDefault();
+                var target = $(this).attr('href');
+                
+                // Cambiar tab activa
+                $('.sgep-cita-acciones-nav li').removeClass('active');
+                $(this).parent().addClass('active');
+                
+                // Mostrar panel correspondiente
+                $('.sgep-cita-accion-panel').removeClass('active');
+                $(target).addClass('active');
+            });
+            
+            // Formulario para rechazar cita
+            $('#sgep_rechazar_cita_form').on('submit', function(e) {
+                e.preventDefault();
+                
+                if (!confirm('¿Estás seguro de rechazar esta cita?')) {
+                    return;
+                }
+                
+                var form = $(this);
+                var btn = form.find('[type="submit"]');
+                var citaId = form.find('input[name="cita_id"]').val();
+                var motivo = form.find('#sgep_motivo_rechazo').val();
+                
+                btn.prop('disabled', true).text('Procesando...');
+                
+                $.ajax({
+                    url: sgep_ajax.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'sgep_rechazar_cita',
+                        nonce: sgep_ajax.nonce,
+                        cita_id: citaId,
+                        motivo: motivo
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.data.message);
+                            window.location.href = '?tab=citas';
+                        } else {
+                            alert(response.data);
+                            btn.prop('disabled', false).text('Rechazar Cita');
+                        }
+                    },
+                    error: function() {
+                        alert('Error al rechazar la cita. Por favor, intenta nuevamente.');
+                        btn.prop('disabled', false).text('Rechazar Cita');
+                    }
+                });
+            });
+            
+            // Formulario para proponer nueva fecha
+            $('#sgep_proponer_fecha_form').on('submit', function(e) {
+                e.preventDefault();
+                
+                var form = $(this);
+                var btn = form.find('[type="submit"]');
+                var citaId = form.find('input[name="cita_id"]').val();
+                var nuevaFecha = form.find('#sgep_nueva_fecha').val();
+                var nuevaHora = form.find('#sgep_nueva_hora').val();
+                
+                if (!nuevaFecha || !nuevaHora) {
+                    alert('Por favor, especifica la nueva fecha y hora.');
+                    return;
+                }
+                
+                btn.prop('disabled', true).text('Procesando...');
+                
+                $.ajax({
+                    url: sgep_ajax.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'sgep_proponer_nueva_fecha',
+                        nonce: sgep_ajax.nonce,
+                        cita_id: citaId,
+                        nueva_fecha: nuevaFecha,
+                        nueva_hora: nuevaHora
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.data.message);
+                            window.location.href = '?tab=citas';
+                        } else {
+                            alert(response.data);
+                            btn.prop('disabled', false).text('Proponer Nueva Fecha');
+                        }
+                    },
+                    error: function() {
+                        alert('Error al proponer la nueva fecha. Por favor, intenta nuevamente.');
+                        btn.prop('disabled', false).text('Proponer Nueva Fecha');
+                    }
+                });
+            });
+            
+            // Para el cliente: aceptar o rechazar nueva fecha propuesta
+            $('.sgep-aceptar-nueva-fecha').on('click', function() {
+                var btn = $(this);
+                var citaId = btn.data('id');
+                var aceptar = btn.data('aceptar');
+                var confirmMsg = aceptar ? 
+                    '¿Estás seguro de aceptar la nueva fecha propuesta?' : 
+                    '¿Estás seguro de rechazar la nueva fecha propuesta? Se mantendrá la fecha original.';
+                
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+                
+                $('.sgep-aceptar-nueva-fecha').prop('disabled', true);
+                
+                $.ajax({
+                    url: sgep_ajax.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'sgep_aceptar_nueva_fecha',
+                        nonce: sgep_ajax.nonce,
+                        cita_id: citaId,
+                        aceptar: aceptar
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.data.message);
+                            location.reload();
+                        } else {
+                            alert(response.data);
+                            $('.sgep-aceptar-nueva-fecha').prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        alert('Error al procesar la respuesta. Por favor, intenta nuevamente.');
+                        $('.sgep-aceptar-nueva-fecha').prop('disabled', false);
+                    }
+                });
+            });
 
-// Agregar estas funciones al archivo public/js/sgep-public.js dentro de la función initCitas()
-
-// Gestión de tabs para acciones de cita
-$('.sgep-cita-acciones-nav a').on('click', function(e) {
-    e.preventDefault();
-    var target = $(this).attr('href');
-    
-    // Cambiar tab activa
-    $('.sgep-cita-acciones-nav li').removeClass('active');
-    $(this).parent().addClass('active');
-    
-    // Mostrar panel correspondiente
-    $('.sgep-cita-accion-panel').removeClass('active');
-    $(target).addClass('active');
-});
-
-// Formulario para rechazar cita
-$('#sgep_rechazar_cita_form').on('submit', function(e) {
-    e.preventDefault();
-    
-    if (!confirm('¿Estás seguro de rechazar esta cita?')) {
-        return;
-    }
-    
-    var form = $(this);
-    var btn = form.find('[type="submit"]');
-    var citaId = form.find('input[name="cita_id"]').val();
-    var motivo = form.find('#sgep_motivo_rechazo').val();
-    
-    btn.prop('disabled', true).text('Procesando...');
-    
-    $.ajax({
-        url: sgep_ajax.ajax_url,
-        type: 'POST',
-        data: {
-            action: 'sgep_rechazar_cita',
-            nonce: sgep_ajax.nonce,
-            cita_id: citaId,
-            motivo: motivo
-        },
-        success: function(response) {
-            if (response.success) {
-                alert(response.data.message);
-                window.location.href = '?tab=citas';
-            } else {
-                alert(response.data);
-                btn.prop('disabled', false).text('Rechazar Cita');
-            }
-        },
-        error: function() {
-            alert('Error al rechazar la cita. Por favor, intenta nuevamente.');
-            btn.prop('disabled', false).text('Rechazar Cita');
-        }
-    });
-});
-
-// Formulario para proponer nueva fecha
-$('#sgep_proponer_fecha_form').on('submit', function(e) {
-    e.preventDefault();
-    
-    var form = $(this);
-    var btn = form.find('[type="submit"]');
-    var citaId = form.find('input[name="cita_id"]').val();
-    var nuevaFecha = form.find('#sgep_nueva_fecha').val();
-    var nuevaHora = form.find('#sgep_nueva_hora').val();
-    
-    if (!nuevaFecha || !nuevaHora) {
-        alert('Por favor, especifica la nueva fecha y hora.');
-        return;
-    }
-    
-    btn.prop('disabled', true).text('Procesando...');
-    
-    $.ajax({
-        url: sgep_ajax.ajax_url,
-        type: 'POST',
-        data: {
-            action: 'sgep_proponer_nueva_fecha',
-            nonce: sgep_ajax.nonce,
-            cita_id: citaId,
-            nueva_fecha: nuevaFecha,
-            nueva_hora: nuevaHora
-        },
-        success: function(response) {
-            if (response.success) {
-                alert(response.data.message);
-                window.location.href = '?tab=citas';
-            } else {
-                alert(response.data);
-                btn.prop('disabled', false).text('Proponer Nueva Fecha');
-            }
-        },
-        error: function() {
-            alert('Error al proponer la nueva fecha. Por favor, intenta nuevamente.');
-            btn.prop('disabled', false).text('Proponer Nueva Fecha');
-        }
-    });
-});
-
-// Para el cliente: aceptar o rechazar nueva fecha propuesta
-$('.sgep-aceptar-nueva-fecha').on('click', function() {
-    var btn = $(this);
-    var citaId = btn.data('id');
-    var aceptar = btn.data('aceptar');
-    var confirmMsg = aceptar ? 
-        '¿Estás seguro de aceptar la nueva fecha propuesta?' : 
-        '¿Estás seguro de rechazar la nueva fecha propuesta? Se mantendrá la fecha original.';
-    
-    if (!confirm(confirmMsg)) {
-        return;
-    }
-    
-    $('.sgep-aceptar-nueva-fecha').prop('disabled', true);
-    
-    $.ajax({
-        url: sgep_ajax.ajax_url,
-        type: 'POST',
-        data: {
-            action: 'sgep_aceptar_nueva_fecha',
-            nonce: sgep_ajax.nonce,
-            cita_id: citaId,
-            aceptar: aceptar
-        },
-        success: function(response) {
-            if (response.success) {
-                alert(response.data.message);
-                location.reload();
-            } else {
-                alert(response.data);
-                $('.sgep-aceptar-nueva-fecha').prop('disabled', false);
-            }
-        },
-        error: function() {
-            alert('Error al procesar la respuesta. Por favor, intenta nuevamente.');
-            $('.sgep-aceptar-nueva-fecha').prop('disabled', false);
-        }
-    });
-});
             // Enviar petición AJAX
             btn.prop('disabled', true).text('Agendando...');
             
@@ -446,6 +441,7 @@ $('.sgep-aceptar-nueva-fecha').on('click', function() {
             
             // Validaciones
             if (!citaId) {
+                alert('ID de cita inválido.');
                 return;
             }
             
@@ -679,6 +675,143 @@ $('.sgep-aceptar-nueva-fecha').on('click', function() {
         html += '</div>';
         container.html(html);
     }
+    
+    // Iniciar la gestión de tabs para acciones de cita (fuera de cualquier función)
+    $(document).on('click', '.sgep-cita-acciones-nav a', function(e) {
+        e.preventDefault();
+        var target = $(this).attr('href');
+        
+        // Cambiar tab activa
+        $('.sgep-cita-acciones-nav li').removeClass('active');
+        $(this).parent().addClass('active');
+        
+        // Mostrar panel correspondiente
+        $('.sgep-cita-accion-panel').removeClass('active');
+        $(target).addClass('active');
+    });
+    
+    // Formulario para rechazar cita (fuera de cualquier función)
+    $(document).on('submit', '#sgep_rechazar_cita_form', function(e) {
+        e.preventDefault();
+        
+        if (!confirm('¿Estás seguro de rechazar esta cita?')) {
+            return;
+        }
+        
+        var form = $(this);
+        var btn = form.find('[type="submit"]');
+        var citaId = form.find('input[name="cita_id"]').val();
+        var motivo = form.find('#sgep_motivo_rechazo').val();
+        
+        btn.prop('disabled', true).text('Procesando...');
+        
+        $.ajax({
+            url: sgep_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'sgep_rechazar_cita',
+                nonce: sgep_ajax.nonce,
+                cita_id: citaId,
+                motivo: motivo
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    window.location.href = '?tab=citas';
+                } else {
+                    alert(response.data);
+                    btn.prop('disabled', false).text('Rechazar Cita');
+                }
+            },
+            error: function() {
+                alert('Error al rechazar la cita. Por favor, intenta nuevamente.');
+                btn.prop('disabled', false).text('Rechazar Cita');
+            }
+        });
+    });
+    
+    // Formulario para proponer nueva fecha (fuera de cualquier función)
+    $(document).on('submit', '#sgep_proponer_fecha_form', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var btn = form.find('[type="submit"]');
+        var citaId = form.find('input[name="cita_id"]').val();
+        var nuevaFecha = form.find('#sgep_nueva_fecha').val();
+        var nuevaHora = form.find('#sgep_nueva_hora').val();
+        
+        if (!nuevaFecha || !nuevaHora) {
+            alert('Por favor, especifica la nueva fecha y hora.');
+            return;
+        }
+        
+        btn.prop('disabled', true).text('Procesando...');
+        
+        $.ajax({
+            url: sgep_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'sgep_proponer_nueva_fecha',
+                nonce: sgep_ajax.nonce,
+                cita_id: citaId,
+                nueva_fecha: nuevaFecha,
+                nueva_hora: nuevaHora
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    window.location.href = '?tab=citas';
+                } else {
+                    alert(response.data);
+                    btn.prop('disabled', false).text('Proponer Nueva Fecha');
+                }
+            },
+            error: function() {
+                alert('Error al proponer la nueva fecha. Por favor, intenta nuevamente.');
+                btn.prop('disabled', false).text('Proponer Nueva Fecha');
+            }
+        });
+    });
+    
+    // Para el cliente: aceptar o rechazar nueva fecha propuesta (fuera de cualquier función)
+    $(document).on('click', '.sgep-aceptar-nueva-fecha', function() {
+        var btn = $(this);
+        var citaId = btn.data('id');
+        var aceptar = btn.data('aceptar');
+        var confirmMsg = aceptar ? 
+            '¿Estás seguro de aceptar la nueva fecha propuesta?' : 
+            '¿Estás seguro de rechazar la nueva fecha propuesta? Se mantendrá la fecha original.';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        $('.sgep-aceptar-nueva-fecha').prop('disabled', true);
+        
+        $.ajax({
+            url: sgep_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'sgep_aceptar_nueva_fecha',
+                nonce: sgep_ajax.nonce,
+                cita_id: citaId,
+                aceptar: aceptar
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    location.reload();
+                } else {
+                    alert(response.data);
+                    $('.sgep-aceptar-nueva-fecha').prop('disabled', false);
+                }
+            },
+                            error: function() {
+                alert('Error al procesar la respuesta. Por favor, intenta nuevamente.');
+                $('.sgep-aceptar-nueva-fecha').prop('disabled', false);
+                }
+            });
+        });
     
     // Inicializar todos los componentes
     initComponents();
