@@ -1007,4 +1007,198 @@ add_action('wp_ajax_sgep_aceptar_nueva_fecha', array($this, 'aceptar_nueva_fecha
         
         wp_mail($destinatario->user_email, $asunto, $contenido);
     }
+
+    /**
+ * Enviar notificación por email para diferentes estados de citas
+ * 
+ * @param int $cita_id ID de la cita
+ * @param string $tipo Tipo de notificación (nueva, confirmada, cancelada, etc.)
+ */
+private function enviar_notificacion_cita($cita_id, $tipo) {
+    // Verificar si las notificaciones están habilitadas
+    $notificaciones = get_option('sgep_email_notifications', 1);
+    
+    if (!$notificaciones) {
+        return;
+    }
+    
+    global $wpdb;
+    $cita = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}sgep_citas WHERE id = %d",
+        $cita_id
+    ));
+    
+    if (!$cita) {
+        return;
+    }
+    
+    $especialista = get_userdata($cita->especialista_id);
+    $cliente = get_userdata($cita->cliente_id);
+    
+    if (!$especialista || !$cliente) {
+        return;
+    }
+    
+    $fecha_hora = new DateTime($cita->fecha);
+    $fecha_formateada = $fecha_hora->format('d/m/Y H:i');
+    
+    $asunto = '';
+    $mensaje = '';
+    $destinatario = '';
+    
+    switch ($tipo) {
+        case 'nueva':
+            // Notificar al especialista
+            $asunto = sprintf(__('Nueva cita agendada para el %s', 'sgep'), $fecha_formateada);
+            $mensaje = sprintf(
+                __('El cliente %s ha agendado una cita contigo para el %s. Por favor, confirma o cancela la cita desde tu panel de especialista.', 'sgep'),
+                $cliente->display_name,
+                $fecha_formateada
+            );
+            $destinatario = $especialista->user_email;
+            break;
+            
+        case 'confirmada':
+            // Notificar al cliente
+            $asunto = sprintf(__('Cita confirmada para el %s', 'sgep'), $fecha_formateada);
+            $mensaje = sprintf(
+                __('Tu cita con %s para el %s ha sido confirmada. ', 'sgep'),
+                $especialista->display_name,
+                $fecha_formateada
+            );
+            
+            if (!empty($cita->zoom_link)) {
+                $mensaje .= sprintf(
+                    __('Enlace de Zoom: %s (ID: %s, Contraseña: %s)', 'sgep'),
+                    $cita->zoom_link,
+                    $cita->zoom_id,
+                    $cita->zoom_password
+                );
+            }
+            $destinatario = $cliente->user_email;
+            break;
+            
+        case 'rechazada':
+            // Notificar al cliente
+            $asunto = sprintf(__('Cita rechazada para el %s', 'sgep'), $fecha_formateada);
+            $mensaje = sprintf(
+                __('Tu cita con %s para el %s ha sido rechazada por el especialista.', 'sgep'),
+                $especialista->display_name,
+                $fecha_formateada
+            );
+            
+            if (!empty($cita->motivo_rechazo)) {
+                $mensaje .= "\n\n" . __('Motivo: ', 'sgep') . $cita->motivo_rechazo;
+            }
+            $destinatario = $cliente->user_email;
+            break;
+            
+        case 'fecha_propuesta':
+            // Notificar al cliente sobre la nueva fecha propuesta
+            $fecha_propuesta = new DateTime($cita->fecha_propuesta);
+            $fecha_propuesta_formateada = $fecha_propuesta->format('d/m/Y H:i');
+            
+            $asunto = sprintf(__('Nueva fecha propuesta para tu cita', 'sgep'));
+            $mensaje = sprintf(
+                __('El especialista %s ha propuesto una nueva fecha para tu cita: %s. Por favor, ingresa a tu panel para aceptar o rechazar esta propuesta.', 'sgep'),
+                $especialista->display_name,
+                $fecha_propuesta_formateada
+            );
+            $destinatario = $cliente->user_email;
+            break;
+            
+        case 'nueva_fecha_aceptada':
+            // Notificar al especialista que el cliente aceptó la nueva fecha
+            $asunto = sprintf(__('Nueva fecha aceptada para la cita del %s', 'sgep'), $fecha_formateada);
+            $mensaje = sprintf(
+                __('El cliente %s ha aceptado la nueva fecha que propusiste para la cita (%s). La cita está pendiente de tu confirmación final.', 'sgep'),
+                $cliente->display_name,
+                $fecha_formateada
+            );
+            $destinatario = $especialista->user_email;
+            break;
+            
+        case 'nueva_fecha_rechazada':
+            // Notificar al especialista que el cliente rechazó la nueva fecha
+            $asunto = sprintf(__('Nueva fecha rechazada para la cita del %s', 'sgep'), $fecha_formateada);
+            $mensaje = sprintf(
+                __('El cliente %s ha rechazado la nueva fecha que propusiste para la cita. Se mantiene la fecha original (%s) y la cita está pendiente de tu confirmación.', 'sgep'),
+                $cliente->display_name,
+                $fecha_formateada
+            );
+            $destinatario = $especialista->user_email;
+            break;
+            
+        case 'cancelada':
+            // Notificar al otro usuario
+            $remitente_id = get_current_user_id();
+            
+            if ($remitente_id == $cita->especialista_id) {
+                // Especialista canceló
+                $destinatario = $cliente->user_email;
+                $asunto = sprintf(__('Cita cancelada para el %s', 'sgep'), $fecha_formateada);
+                $mensaje = sprintf(
+                    __('Tu cita con %s para el %s ha sido cancelada por el especialista.', 'sgep'),
+                    $especialista->display_name,
+                    $fecha_formateada
+                );
+            } else {
+                // Cliente canceló
+                $destinatario = $especialista->user_email;
+                $asunto = sprintf(__('Cita cancelada para el %s', 'sgep'), $fecha_formateada);
+                $mensaje = sprintf(
+                    __('La cita con %s para el %s ha sido cancelada por el cliente.', 'sgep'),
+                    $cliente->display_name,
+                    $fecha_formateada
+                );
+            }
+            break;
+    }
+    
+    // Enviar el email solo si tenemos un destinatario válido
+    if (!empty($destinatario) && !empty($asunto) && !empty($mensaje)) {
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        wp_mail($destinatario, $asunto, $mensaje, $headers);
+    }
+}
+/**
+ * Enviar notificación por email de nuevo mensaje
+ * 
+ * @param int $mensaje_id ID del mensaje
+ */
+private function enviar_notificacion_mensaje($mensaje_id) {
+    // Verificar si las notificaciones están habilitadas
+    $notificaciones = get_option('sgep_email_notifications', 1);
+    
+    if (!$notificaciones) {
+        return;
+    }
+    
+    global $wpdb;
+    $mensaje = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}sgep_mensajes WHERE id = %d",
+        $mensaje_id
+    ));
+    
+    if (!$mensaje) {
+        return;
+    }
+    
+    $remitente = get_userdata($mensaje->remitente_id);
+    $destinatario = get_userdata($mensaje->destinatario_id);
+    
+    if (!$remitente || !$destinatario) {
+        return;
+    }
+    
+    $asunto = sprintf(__('Nuevo mensaje de %s: %s', 'sgep'), $remitente->display_name, $mensaje->asunto);
+    $contenido = sprintf(
+        __('Has recibido un nuevo mensaje de %s:<br><br>%s<br><br>Para responder, inicia sesión en tu cuenta.', 'sgep'),
+        $remitente->display_name,
+        nl2br(esc_html($mensaje->mensaje))
+    );
+    
+    $headers = array('Content-Type: text/html; charset=UTF-8');
+    wp_mail($destinatario->user_email, $asunto, $contenido, $headers);
+}
 }
