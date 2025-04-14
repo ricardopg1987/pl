@@ -377,5 +377,128 @@ if ($accion === 'ver' && $cita_id > 0) {
             });
         });
     });
-
+    </script>
     
+    <?php
+} else {
+    // Listado de citas
+    
+    // Establecer el filtro
+    $where = "WHERE c.especialista_id = %d";
+    $query_args = array($especialista_id);
+    
+    if ($filtro === 'pendiente') {
+        $where .= " AND c.estado = 'pendiente'";
+    } elseif ($filtro === 'confirmada') {
+        $where .= " AND c.estado = 'confirmada'";
+    } elseif ($filtro === 'cancelada') {
+        $where .= " AND c.estado = 'cancelada'";
+    } elseif ($filtro === 'rechazada') {
+        $where .= " AND c.estado = 'rechazada'";
+    } elseif ($filtro === 'fecha_propuesta') {
+        $where .= " AND c.estado = 'fecha_propuesta'";
+    } elseif ($filtro === 'hoy') {
+        $where .= " AND DATE(c.fecha) = CURDATE() AND c.estado = 'confirmada'";
+    } elseif ($filtro === 'proximas') {
+        $where .= " AND c.fecha > NOW() AND c.estado = 'confirmada'";
+    } elseif ($filtro === 'pasadas') {
+        $where .= " AND c.fecha < NOW() AND c.estado = 'confirmada'";
+    }
+    
+    // Obtener citas
+    $citas = $wpdb->get_results($wpdb->prepare(
+        "SELECT c.*, cl.display_name as cliente_nombre 
+        FROM {$wpdb->prefix}sgep_citas c
+        LEFT JOIN {$wpdb->users} cl ON c.cliente_id = cl.ID
+        {$where}
+        ORDER BY c.fecha DESC",
+        $query_args
+    ));
+    ?>
+    
+    <div class="sgep-citas-wrapper">
+        <div class="sgep-citas-header">
+            <h3><?php _e('Gestión de Citas', 'sgep'); ?></h3>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="sgep-citas-filter">
+            <a href="?tab=citas" class="sgep-button <?php echo empty($filtro) ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Todas', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=pendiente" class="sgep-button <?php echo $filtro === 'pendiente' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Pendientes', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=fecha_propuesta" class="sgep-button <?php echo $filtro === 'fecha_propuesta' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Con fecha propuesta', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=confirmada" class="sgep-button <?php echo $filtro === 'confirmada' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Confirmadas', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=hoy" class="sgep-button <?php echo $filtro === 'hoy' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Hoy', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=proximas" class="sgep-button <?php echo $filtro === 'proximas' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Próximas', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=pasadas" class="sgep-button <?php echo $filtro === 'pasadas' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Pasadas', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=cancelada" class="sgep-button <?php echo $filtro === 'cancelada' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Canceladas', 'sgep'); ?></a>
+            <a href="?tab=citas&filtro=rechazada" class="sgep-button <?php echo $filtro === 'rechazada' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Rechazadas', 'sgep'); ?></a>
+        </div>
+        
+        <!-- Listado de citas -->
+        <div class="sgep-citas-list">
+            <?php if (!empty($citas)) : ?>
+                <?php foreach ($citas as $cita) : 
+                    $fecha = new DateTime($cita->fecha);
+                    $tiene_fecha_propuesta = !empty($cita->fecha_propuesta) && $cita->estado === 'fecha_propuesta';
+                    
+                    if ($tiene_fecha_propuesta) {
+                        $fecha_propuesta = new DateTime($cita->fecha_propuesta);
+                    }
+                ?>
+                    <div class="sgep-cita-item">
+                        <div class="sgep-cita-fecha">
+                            <div class="sgep-fecha-dia"><?php echo esc_html($fecha->format('d')); ?></div>
+                            <div class="sgep-fecha-mes"><?php echo esc_html($fecha->format('M')); ?></div>
+                        </div>
+                        
+                        <div class="sgep-cita-info">
+                            <h4><?php echo esc_html($cita->cliente_nombre); ?></h4>
+                            <span class="sgep-cita-hora"><?php echo esc_html($fecha->format('H:i')); ?> hrs</span>
+                            <span class="sgep-cita-estado sgep-estado-<?php echo esc_attr($cita->estado); ?>">
+                                <?php
+                                switch ($cita->estado) {
+                                    case 'pendiente':
+                                        _e('Pendiente', 'sgep');
+                                        break;
+                                    case 'confirmada':
+                                        _e('Confirmada', 'sgep');
+                                        break;
+                                    case 'cancelada':
+                                        _e('Cancelada', 'sgep');
+                                        break;
+                                    case 'rechazada':
+                                        _e('Rechazada', 'sgep');
+                                        break;
+                                    case 'fecha_propuesta':
+                                        _e('Fecha propuesta', 'sgep');
+                                        break;
+                                    default:
+                                        echo esc_html($cita->estado);
+                                }
+                                ?>
+                            </span>
+                            
+                            <?php if ($tiene_fecha_propuesta) : ?>
+                                <span class="sgep-cita-nueva-fecha-badge">
+                                    <?php printf(__('Nueva fecha: %s', 'sgep'), esc_html($fecha_propuesta->format('d/m/Y H:i'))); ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="sgep-cita-actions">
+                            <a href="?tab=citas&accion=ver&id=<?php echo $cita->id; ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Ver', 'sgep'); ?></a>
+                            
+                            <?php if ($cita->estado !== 'cancelada' && $cita->estado !== 'rechazada') : ?>
+                                <a href="#" class="sgep-button sgep-button-sm sgep-button-outline sgep-cancelar-cita" data-id="<?php echo $cita->id; ?>"><?php _e('Cancelar', 'sgep'); ?></a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else : ?>
+                <p class="sgep-no-items"><?php _e('No se encontraron citas.', 'sgep'); ?></p>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php
+}
+?>
