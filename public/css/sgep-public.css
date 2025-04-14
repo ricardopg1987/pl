@@ -1873,3 +1873,143 @@
         color: #bbb;
     }
 }
+/**
+ * Agregar estos estilos al archivo public/css/sgep-public.css
+ */
+
+/* Estilos para estados de citas adicionales */
+.sgep-estado-rechazada {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.sgep-estado-propuesta {
+    background-color: #e2f3fd;
+    color: #0c5460;
+}
+
+/* Estilos para los tabs de acciones de cita */
+.sgep-cita-acciones-tabs {
+    margin-top: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.sgep-cita-acciones-nav {
+    display: flex;
+    list-style: none;
+    background-color: #f8f9fa;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.sgep-cita-acciones-nav li {
+    margin: 0;
+}
+
+.sgep-cita-acciones-nav a {
+    display: block;
+    padding: 12px 15px;
+    color: #495057;
+    text-decoration: none;
+    border-right: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.sgep-cita-acciones-nav li.active a {
+    color: #0073aa;
+    background-color: #fff;
+    border-bottom: 2px solid #0073aa;
+    margin-bottom: -1px;
+}
+
+.sgep-cita-acciones-nav a:hover {
+    background-color: #e9ecef;
+}
+
+.sgep-cita-acciones-contenido {
+    padding: 15px;
+}
+
+.sgep-cita-accion-panel {
+    display: none;
+}
+
+.sgep-cita-accion-panel.active {
+    display: block;
+}
+
+/* Resaltar fila de nueva fecha propuesta */
+.sgep-cita-row-highlight {
+    background-color: #fff3cd;
+    padding: 10px;
+    border-left: 3px solid #ffc107;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* Botón de peligro (rojo) */
+.sgep-button-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.sgep-button-danger:hover {
+    background-color: #c82333;
+}
+
+/* Sección de rechazo */
+.sgep-cita-section-rechazo {
+    background-color: #f8d7da;
+    border-left: 3px solid #dc3545;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+/* Información de cita propuesta */
+.sgep-cita-propuesta-info {
+    background-color: #e2f3fd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+/* Nueva fecha propuesta en el listado */
+.sgep-cita-nueva-fecha-badge {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #0c5460;
+    background-color: #d1ecf1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+/* Sección de nueva fecha */
+.sgep-cita-nueva-fecha {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .sgep-cita-acciones-nav {
+        flex-direction: column;
+    }
+    
+    .sgep-cita-acciones-nav a {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .sgep-cita-acciones-nav li.active a {
+        border-bottom: 1px solid #dee2e6;
+        border-left: 2px solid #0073aa;
+    }
+}

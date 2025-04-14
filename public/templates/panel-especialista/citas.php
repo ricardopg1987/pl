@@ -45,6 +45,12 @@ if ($accion === 'ver' && $cita_id > 0) {
     // Fecha y hora de la cita
     $fecha_cita = new DateTime($cita->fecha);
     $fecha_creacion = new DateTime($cita->created_at);
+    
+    // Comprobar si hay una fecha propuesta
+    $tiene_fecha_propuesta = !empty($cita->fecha_propuesta);
+    if ($tiene_fecha_propuesta) {
+        $fecha_propuesta = new DateTime($cita->fecha_propuesta);
+    }
     ?>
     
     <div class="sgep-cita-detail">
@@ -62,6 +68,12 @@ if ($accion === 'ver' && $cita_id > 0) {
                         break;
                     case 'cancelada':
                         echo '<span class="sgep-estado-cancelada">' . __('Cancelada', 'sgep') . '</span>';
+                        break;
+                    case 'rechazada':
+                        echo '<span class="sgep-estado-rechazada">' . __('Rechazada', 'sgep') . '</span>';
+                        break;
+                    case 'fecha_propuesta':
+                        echo '<span class="sgep-estado-propuesta">' . __('Fecha propuesta', 'sgep') . '</span>';
                         break;
                     default:
                         echo esc_html($cita->estado);
@@ -95,6 +107,13 @@ if ($accion === 'ver' && $cita_id > 0) {
                 <span class="sgep-cita-value"><?php echo esc_html($fecha_cita->format('d/m/Y H:i')); ?></span>
             </div>
             
+            <?php if ($tiene_fecha_propuesta) : ?>
+                <div class="sgep-cita-row sgep-cita-row-highlight">
+                    <span class="sgep-cita-label"><?php _e('Nueva Fecha Propuesta:', 'sgep'); ?></span>
+                    <span class="sgep-cita-value"><?php echo esc_html($fecha_propuesta->format('d/m/Y H:i')); ?></span>
+                </div>
+            <?php endif; ?>
+            
             <div class="sgep-cita-row">
                 <span class="sgep-cita-label"><?php _e('Duración:', 'sgep'); ?></span>
                 <span class="sgep-cita-value"><?php echo esc_html($cita->duracion) . ' ' . __('minutos', 'sgep'); ?></span>
@@ -111,6 +130,15 @@ if ($accion === 'ver' && $cita_id > 0) {
                 <h4><?php _e('Notas', 'sgep'); ?></h4>
                 <div class="sgep-cita-notas">
                     <?php echo wpautop(esc_html($cita->notas)); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($cita->motivo_rechazo)) : ?>
+            <div class="sgep-cita-section">
+                <h4><?php _e('Motivo del Rechazo', 'sgep'); ?></h4>
+                <div class="sgep-cita-motivo-rechazo">
+                    <?php echo wpautop(esc_html($cita->motivo_rechazo)); ?>
                 </div>
             </div>
         <?php endif; ?>
@@ -146,35 +174,98 @@ if ($accion === 'ver' && $cita_id > 0) {
             <?php if ($cita->estado === 'pendiente') : ?>
                 <h4><?php _e('Acciones', 'sgep'); ?></h4>
                 
-                <form id="sgep_confirmar_cita_form" class="sgep-form">
-                    <input type="hidden" id="sgep_cita_id" value="<?php echo esc_attr($cita_id); ?>">
+                <div class="sgep-cita-acciones-tabs">
+                    <ul class="sgep-cita-acciones-nav">
+                        <li class="active"><a href="#sgep-tab-confirmar"><?php _e('Confirmar', 'sgep'); ?></a></li>
+                        <li><a href="#sgep-tab-proponer"><?php _e('Proponer nueva fecha', 'sgep'); ?></a></li>
+                        <li><a href="#sgep-tab-rechazar"><?php _e('Rechazar', 'sgep'); ?></a></li>
+                    </ul>
                     
-                    <div class="sgep-form-field">
-                        <label for="sgep_zoom_link"><?php _e('Enlace de Zoom (opcional)', 'sgep'); ?></label>
-                        <input type="url" id="sgep_zoom_link" name="sgep_zoom_link" placeholder="https://zoom.us/j/...">
-                    </div>
-                    
-                    <div class="sgep-form-row">
-                        <div class="sgep-form-col">
-                            <div class="sgep-form-field">
-                                <label for="sgep_zoom_id"><?php _e('ID de Reunión (opcional)', 'sgep'); ?></label>
-                                <input type="text" id="sgep_zoom_id" name="sgep_zoom_id">
-                            </div>
+                    <div class="sgep-cita-acciones-contenido">
+                        <div id="sgep-tab-confirmar" class="sgep-cita-accion-panel active">
+                            <form id="sgep_confirmar_cita_form" class="sgep-form">
+                                <input type="hidden" id="sgep_cita_id" value="<?php echo esc_attr($cita_id); ?>">
+                                
+                                <div class="sgep-form-field">
+                                    <label for="sgep_zoom_link"><?php _e('Enlace de Zoom (opcional)', 'sgep'); ?></label>
+                                    <input type="url" id="sgep_zoom_link" name="sgep_zoom_link" placeholder="https://zoom.us/j/...">
+                                </div>
+                                
+                                <div class="sgep-form-row">
+                                    <div class="sgep-form-col">
+                                        <div class="sgep-form-field">
+                                            <label for="sgep_zoom_id"><?php _e('ID de Reunión (opcional)', 'sgep'); ?></label>
+                                            <input type="text" id="sgep_zoom_id" name="sgep_zoom_id">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="sgep-form-col">
+                                        <div class="sgep-form-field">
+                                            <label for="sgep_zoom_password"><?php _e('Contraseña (opcional)', 'sgep'); ?></label>
+                                            <input type="text" id="sgep_zoom_password" name="sgep_zoom_password">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="sgep-form-actions">
+                                    <button type="submit" class="sgep-button sgep-button-primary"><?php _e('Confirmar Cita', 'sgep'); ?></button>
+                                </div>
+                            </form>
                         </div>
                         
-                        <div class="sgep-form-col">
-                            <div class="sgep-form-field">
-                                <label for="sgep_zoom_password"><?php _e('Contraseña (opcional)', 'sgep'); ?></label>
-                                <input type="text" id="sgep_zoom_password" name="sgep_zoom_password">
-                            </div>
+                        <div id="sgep-tab-proponer" class="sgep-cita-accion-panel">
+                            <form id="sgep_proponer_fecha_form" class="sgep-form">
+                                <input type="hidden" name="cita_id" value="<?php echo esc_attr($cita_id); ?>">
+                                
+                                <div class="sgep-form-row">
+                                    <div class="sgep-form-col">
+                                        <div class="sgep-form-field">
+                                            <label for="sgep_nueva_fecha"><?php _e('Nueva Fecha', 'sgep'); ?></label>
+                                            <input type="date" id="sgep_nueva_fecha" name="nueva_fecha" required min="<?php echo date('Y-m-d'); ?>">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="sgep-form-col">
+                                        <div class="sgep-form-field">
+                                            <label for="sgep_nueva_hora"><?php _e('Nueva Hora', 'sgep'); ?></label>
+                                            <input type="time" id="sgep_nueva_hora" name="nueva_hora" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="sgep-form-actions">
+                                    <button type="submit" class="sgep-button sgep-button-primary"><?php _e('Proponer Nueva Fecha', 'sgep'); ?></button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div id="sgep-tab-rechazar" class="sgep-cita-accion-panel">
+                            <form id="sgep_rechazar_cita_form" class="sgep-form">
+                                <input type="hidden" name="cita_id" value="<?php echo esc_attr($cita_id); ?>">
+                                
+                                <div class="sgep-form-field">
+                                    <label for="sgep_motivo_rechazo"><?php _e('Motivo del rechazo', 'sgep'); ?></label>
+                                    <textarea id="sgep_motivo_rechazo" name="motivo" rows="4" required></textarea>
+                                    <p class="sgep-field-description"><?php _e('Proporciona una razón para el rechazo de la cita. Esta información será enviada al cliente.', 'sgep'); ?></p>
+                                </div>
+                                
+                                <div class="sgep-form-actions">
+                                    <button type="submit" class="sgep-button sgep-button-danger"><?php _e('Rechazar Cita', 'sgep'); ?></button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                    
-                    <div class="sgep-form-actions">
-                        <button type="submit" class="sgep-button sgep-button-primary"><?php _e('Confirmar Cita', 'sgep'); ?></button>
-                        <a href="#" class="sgep-button sgep-button-secondary sgep-cancelar-cita" data-id="<?php echo esc_attr($cita_id); ?>"><?php _e('Cancelar Cita', 'sgep'); ?></a>
-                    </div>
-                </form>
+                </div>
+                
+            <?php elseif ($cita->estado === 'fecha_propuesta') : ?>
+                <div class="sgep-cita-propuesta-info">
+                    <p><?php _e('Has propuesto una nueva fecha para esta cita. Esperando respuesta del cliente.', 'sgep'); ?></p>
+                </div>
+                
+                <div class="sgep-form-actions">
+                    <a href="#" class="sgep-button sgep-button-secondary sgep-cancelar-cita" data-id="<?php echo esc_attr($cita_id); ?>"><?php _e('Cancelar Cita', 'sgep'); ?></a>
+                </div>
+                
             <?php elseif ($cita->estado === 'confirmada') : ?>
                 <div class="sgep-form-actions">
                     <a href="#" class="sgep-button sgep-button-secondary sgep-cancelar-cita" data-id="<?php echo esc_attr($cita_id); ?>"><?php _e('Cancelar Cita', 'sgep'); ?></a>
@@ -187,100 +278,104 @@ if ($accion === 'ver' && $cita_id > 0) {
         </div>
     </div>
     
-    <?php
-} else {
-    // Listado de citas
-    
-    // Consulta base
-    $query = "SELECT c.*, cl.display_name as cliente_nombre 
-              FROM {$wpdb->prefix}sgep_citas c
-              LEFT JOIN {$wpdb->users} cl ON c.cliente_id = cl.ID
-              WHERE c.especialista_id = %d";
-    $query_args = array($especialista_id);
-    
-    // Aplicar filtro
-    if ($filtro === 'pendiente') {
-        $query .= " AND c.estado = 'pendiente'";
-    } elseif ($filtro === 'confirmada') {
-        $query .= " AND c.estado = 'confirmada'";
-    } elseif ($filtro === 'cancelada') {
-        $query .= " AND c.estado = 'cancelada'";
-    } elseif ($filtro === 'hoy') {
-        $query .= " AND DATE(c.fecha) = CURDATE() AND c.estado = 'confirmada'";
-    } elseif ($filtro === 'proximas') {
-        $query .= " AND c.fecha >= NOW() AND c.estado = 'confirmada'";
-    } elseif ($filtro === 'pasadas') {
-        $query .= " AND c.fecha < NOW() AND c.estado = 'confirmada'";
-    }
-    
-    // Ordenar
-    $query .= " ORDER BY c.fecha DESC";
-    
-    // Obtener citas
-    $citas = $wpdb->get_results($wpdb->prepare($query, $query_args));
-    ?>
-    
-    <div class="sgep-citas-wrapper">
-        <h3><?php _e('Mis Citas', 'sgep'); ?></h3>
+    <script>
+    jQuery(document).ready(function($) {
+        // Tabs para acciones de cita
+        $('.sgep-cita-acciones-nav a').on('click', function(e) {
+            e.preventDefault();
+            var target = $(this).attr('href');
+            
+            // Cambiar tab activa
+            $('.sgep-cita-acciones-nav li').removeClass('active');
+            $(this).parent().addClass('active');
+            
+            // Mostrar panel correspondiente
+            $('.sgep-cita-accion-panel').removeClass('active');
+            $(target).addClass('active');
+        });
         
-        <!-- Filtros -->
-        <div class="sgep-citas-filter">
-            <a href="?tab=citas" class="sgep-button <?php echo empty($filtro) ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Todas', 'sgep'); ?></a>
-            <a href="?tab=citas&filtro=pendiente" class="sgep-button <?php echo $filtro === 'pendiente' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Pendientes', 'sgep'); ?></a>
-            <a href="?tab=citas&filtro=confirmada" class="sgep-button <?php echo $filtro === 'confirmada' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Confirmadas', 'sgep'); ?></a>
-            <a href="?tab=citas&filtro=hoy" class="sgep-button <?php echo $filtro === 'hoy' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Hoy', 'sgep'); ?></a>
-            <a href="?tab=citas&filtro=proximas" class="sgep-button <?php echo $filtro === 'proximas' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Próximas', 'sgep'); ?></a>
-            <a href="?tab=citas&filtro=pasadas" class="sgep-button <?php echo $filtro === 'pasadas' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Pasadas', 'sgep'); ?></a>
-            <a href="?tab=citas&filtro=cancelada" class="sgep-button <?php echo $filtro === 'cancelada' ? 'sgep-button-primary' : 'sgep-button-outline'; ?>"><?php _e('Canceladas', 'sgep'); ?></a>
-        </div>
+        // Formulario para rechazar cita
+        $('#sgep_rechazar_cita_form').on('submit', function(e) {
+            e.preventDefault();
+            
+            if (!confirm('¿Estás seguro de rechazar esta cita?')) {
+                return;
+            }
+            
+            var form = $(this);
+            var btn = form.find('[type="submit"]');
+            var citaId = form.find('input[name="cita_id"]').val();
+            var motivo = form.find('#sgep_motivo_rechazo').val();
+            
+            btn.prop('disabled', true).text('Procesando...');
+            
+            $.ajax({
+                url: sgep_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'sgep_rechazar_cita',
+                    nonce: sgep_ajax.nonce,
+                    cita_id: citaId,
+                    motivo: motivo
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.data.message);
+                        window.location.href = '?tab=citas';
+                    } else {
+                        alert(response.data);
+                        btn.prop('disabled', false).text('Rechazar Cita');
+                    }
+                },
+                error: function() {
+                    alert('Error al rechazar la cita. Por favor, intenta nuevamente.');
+                    btn.prop('disabled', false).text('Rechazar Cita');
+                }
+            });
+        });
         
-        <!-- Listado de citas -->
-        <div class="sgep-citas-list">
-            <?php if (!empty($citas)) : ?>
-                <?php foreach ($citas as $cita) : 
-                    $fecha = new DateTime($cita->fecha);
-                ?>
-                    <div class="sgep-cita-item">
-                        <div class="sgep-cita-fecha">
-                            <div class="sgep-fecha-dia"><?php echo esc_html($fecha->format('d')); ?></div>
-                            <div class="sgep-fecha-mes"><?php echo esc_html($fecha->format('M')); ?></div>
-                        </div>
-                        
-                        <div class="sgep-cita-info">
-                            <h4><?php echo esc_html($cita->cliente_nombre); ?></h4>
-                            <span class="sgep-cita-hora"><?php echo esc_html($fecha->format('H:i')); ?> hrs</span>
-                            <span class="sgep-cita-estado sgep-estado-<?php echo esc_attr($cita->estado); ?>">
-                                <?php
-                                switch ($cita->estado) {
-                                    case 'pendiente':
-                                        _e('Pendiente', 'sgep');
-                                        break;
-                                    case 'confirmada':
-                                        _e('Confirmada', 'sgep');
-                                        break;
-                                    case 'cancelada':
-                                        _e('Cancelada', 'sgep');
-                                        break;
-                                    default:
-                                        echo esc_html($cita->estado);
-                                }
-                                ?>
-                            </span>
-                        </div>
-                        
-                        <div class="sgep-cita-actions">
-                            <a href="?tab=citas&accion=ver&id=<?php echo $cita->id; ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Ver', 'sgep'); ?></a>
-                            
-                            <?php if ($cita->estado === 'pendiente') : ?>
-                                <a href="#" class="sgep-button sgep-button-sm sgep-button-outline sgep-cancelar-cita" data-id="<?php echo $cita->id; ?>"><?php _e('Cancelar', 'sgep'); ?></a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else : ?>
-                <p class="sgep-no-items"><?php _e('No se encontraron citas.', 'sgep'); ?></p>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php
-}
+        // Formulario para proponer nueva fecha
+        $('#sgep_proponer_fecha_form').on('submit', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var btn = form.find('[type="submit"]');
+            var citaId = form.find('input[name="cita_id"]').val();
+            var nuevaFecha = form.find('#sgep_nueva_fecha').val();
+            var nuevaHora = form.find('#sgep_nueva_hora').val();
+            
+            if (!nuevaFecha || !nuevaHora) {
+                alert('Por favor, especifica la nueva fecha y hora.');
+                return;
+            }
+            
+            btn.prop('disabled', true).text('Procesando...');
+            
+            $.ajax({
+                url: sgep_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'sgep_proponer_nueva_fecha',
+                    nonce: sgep_ajax.nonce,
+                    cita_id: citaId,
+                    nueva_fecha: nuevaFecha,
+                    nueva_hora: nuevaHora
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.data.message);
+                        window.location.href = '?tab=citas';
+                    } else {
+                        alert(response.data);
+                        btn.prop('disabled', false).text('Proponer Nueva Fecha');
+                    }
+                },
+                error: function() {
+                    alert('Error al proponer la nueva fecha. Por favor, intenta nuevamente.');
+                    btn.prop('disabled', false).text('Proponer Nueva Fecha');
+                }
+            });
+        });
+    });
+
+    

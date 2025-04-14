@@ -29,6 +29,11 @@ class SGEP_Ajax {
         // Acciones para usuarios no logueados
         add_action('wp_ajax_nopriv_sgep_obtener_especialistas', array($this, 'obtener_especialistas'));
         add_action('wp_ajax_sgep_obtener_especialistas', array($this, 'obtener_especialistas'));
+
+        add_action('wp_ajax_sgep_rechazar_cita', array($this, 'rechazar_cita'));
+add_action('wp_ajax_sgep_proponer_nueva_fecha', array($this, 'proponer_nueva_fecha'));
+add_action('wp_ajax_sgep_aceptar_nueva_fecha', array($this, 'aceptar_nueva_fecha'));
+
     }
     
     /**
@@ -81,6 +86,211 @@ class SGEP_Ajax {
         ));
     }
     
+    public function rechazar_cita() {
+        // Verificar nonce
+        check_ajax_referer('sgep_ajax_nonce', 'nonce');
+        
+        // Obtener datos
+        $cita_id = isset($_POST['cita_id']) ? intval($_POST['cita_id']) : 0;
+        $motivo = isset($_POST['motivo']) ? sanitize_textarea_field($_POST['motivo']) : '';
+        
+        if ($cita_id <= 0) {
+            wp_send_json_error(__('ID de cita inválido.', 'sgep'));
+        }
+        
+        // Obtener cita
+        global $wpdb;
+        $cita = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}sgep_citas WHERE id = %d",
+            $cita_id
+        ));
+        
+        if (!$cita) {
+            wp_send_json_error(__('La cita no existe.', 'sgep'));
+        }
+        
+        // Verificar permisos
+        $usuario_actual = get_current_user_id();
+        $roles = new SGEP_Roles();
+        
+        if ($roles->is_especialista($usuario_actual) && $cita->especialista_id != $usuario_actual) {
+            wp_send_json_error(__('No tienes permisos para rechazar esta cita.', 'sgep'));
+        }
+        
+        // Verificar que la cita esté pendiente
+        if ($cita->estado !== 'pendiente') {
+            wp_send_json_error(__('Solo se pueden rechazar citas pendientes.', 'sgep'));
+        }
+        
+        // Actualizar estado de la cita
+        $resultado = $wpdb->update(
+            $wpdb->prefix . 'sgep_citas',
+            array(
+                'estado' => 'rechazada',
+                'motivo_rechazo' => $motivo,
+                'updated_at' => current_time('mysql')
+            ),
+            array('id' => $cita_id)
+        );
+        
+        if ($resultado === false) {
+            wp_send_json_error(__('Error al rechazar la cita.', 'sgep'));
+        }
+        
+        // Enviar notificación al cliente
+        $this->enviar_notificacion_cita($cita_id, 'rechazada');
+        
+        wp_send_json_success(array(
+            'message' => __('Cita rechazada correctamente.', 'sgep')
+        ));
+    }
+    
+    /**
+     * Proponer nueva fecha para una cita
+     */
+    public function proponer_nueva_fecha() {
+        // Verificar nonce
+        check_ajax_referer('sgep_ajax_nonce', 'nonce');
+        
+        // Obtener datos
+        $cita_id = isset($_POST['cita_id']) ? intval($_POST['cita_id']) : 0;
+        $nueva_fecha = isset($_POST['nueva_fecha']) ? sanitize_text_field($_POST['nueva_fecha']) : '';
+        $nueva_hora = isset($_POST['nueva_hora']) ? sanitize_text_field($_POST['nueva_hora']) : '';
+        
+        if ($cita_id <= 0 || empty($nueva_fecha) || empty($nueva_hora)) {
+            wp_send_json_error(__('Datos inválidos. Por favor, proporciona la nueva fecha y hora.', 'sgep'));
+        }
+        
+        // Obtener cita
+        global $wpdb;
+        $cita = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}sgep_citas WHERE id = %d",
+            $cita_id
+        ));
+        
+        if (!$cita) {
+            wp_send_json_error(__('La cita no existe.', 'sgep'));
+        }
+        
+        // Verificar permisos
+        $usuario_actual = get_current_user_id();
+        $roles = new SGEP_Roles();
+        
+        if ($roles->is_especialista($usuario_actual) && $cita->especialista_id != $usuario_actual) {
+            wp_send_json_error(__('No tienes permisos para modificar esta cita.', 'sgep'));
+        }
+        
+        // Verificar que la cita esté pendiente
+        if ($cita->estado !== 'pendiente') {
+            wp_send_json_error(__('Solo se pueden modificar citas pendientes.', 'sgep'));
+        }
+        
+        // Formatear la nueva fecha y hora
+        $fecha_hora_propuesta = $nueva_fecha . ' ' . $nueva_hora;
+        
+        // Actualizar la cita con la propuesta
+        $resultado = $wpdb->update(
+            $wpdb->prefix . 'sgep_citas',
+            array(
+                'estado' => 'fecha_propuesta',
+                'fecha_propuesta' => $fecha_hora_propuesta,
+                'updated_at' => current_time('mysql')
+            ),
+            array('id' => $cita_id)
+        );
+        
+        if ($resultado === false) {
+            wp_send_json_error(__('Error al proponer la nueva fecha.', 'sgep'));
+        }
+        
+        // Enviar notificación al cliente
+        $this->enviar_notificacion_cita($cita_id, 'fecha_propuesta');
+        
+        wp_send_json_success(array(
+            'message' => __('Nueva fecha propuesta correctamente. Esperando confirmación del cliente.', 'sgep')
+        ));
+    }
+    
+    /**
+     * Aceptar la nueva fecha propuesta (para clientes)
+     */
+    public function aceptar_nueva_fecha() {
+        // Verificar nonce
+        check_ajax_referer('sgep_ajax_nonce', 'nonce');
+        
+        // Obtener datos
+        $cita_id = isset($_POST['cita_id']) ? intval($_POST['cita_id']) : 0;
+        $aceptar = isset($_POST['aceptar']) ? (bool)$_POST['aceptar'] : false;
+        
+        if ($cita_id <= 0) {
+            wp_send_json_error(__('ID de cita inválido.', 'sgep'));
+        }
+        
+        // Obtener cita
+        global $wpdb;
+        $cita = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}sgep_citas WHERE id = %d",
+            $cita_id
+        ));
+        
+        if (!$cita) {
+            wp_send_json_error(__('La cita no existe.', 'sgep'));
+        }
+        
+        // Verificar permisos
+        $usuario_actual = get_current_user_id();
+        $roles = new SGEP_Roles();
+        
+        if ($roles->is_cliente($usuario_actual) && $cita->cliente_id != $usuario_actual) {
+            wp_send_json_error(__('No tienes permisos para aceptar esta propuesta.', 'sgep'));
+        }
+        
+        // Verificar que la cita tenga una fecha propuesta
+        if ($cita->estado !== 'fecha_propuesta' || empty($cita->fecha_propuesta)) {
+            wp_send_json_error(__('Esta cita no tiene una propuesta de fecha pendiente.', 'sgep'));
+        }
+        
+        if ($aceptar) {
+            // El cliente acepta la nueva fecha
+            $resultado = $wpdb->update(
+                $wpdb->prefix . 'sgep_citas',
+                array(
+                    'estado' => 'pendiente',
+                    'fecha' => $cita->fecha_propuesta,
+                    'fecha_propuesta' => null,
+                    'updated_at' => current_time('mysql')
+                ),
+                array('id' => $cita_id)
+            );
+            
+            $mensaje = __('Has aceptado la nueva fecha. La cita está pendiente de confirmación por el especialista.', 'sgep');
+        } else {
+            // El cliente rechaza la nueva fecha (se mantiene la cita como pendiente con la fecha original)
+            $resultado = $wpdb->update(
+                $wpdb->prefix . 'sgep_citas',
+                array(
+                    'estado' => 'pendiente',
+                    'fecha_propuesta' => null,
+                    'updated_at' => current_time('mysql')
+                ),
+                array('id' => $cita_id)
+            );
+            
+            $mensaje = __('Has rechazado la nueva fecha. La cita mantiene la fecha original y está pendiente de confirmación.', 'sgep');
+        }
+        
+        if ($resultado === false) {
+            wp_send_json_error(__('Error al procesar la respuesta.', 'sgep'));
+        }
+        
+        // Enviar notificación al especialista
+        $this->enviar_notificacion_cita($cita_id, $aceptar ? 'nueva_fecha_aceptada' : 'nueva_fecha_rechazada');
+        
+        wp_send_json_success(array(
+            'message' => $mensaje
+        ));
+    }
+
     /**
      * Eliminar disponibilidad de especialista
      */
@@ -655,7 +865,62 @@ class SGEP_Ajax {
                 wp_mail($especialista->user_email, $asunto, $mensaje);
                 break;
                 
-            case 'confirmada':
+                case 'rechazada':
+                    // Notificar al cliente
+                    $asunto = sprintf(__('Cita rechazada para el %s', 'sgep'), $fecha_formateada);
+                    $mensaje = sprintf(
+                        __('Tu cita con %s para el %s ha sido rechazada por el especialista.', 'sgep'),
+                        $especialista->display_name,
+                        $fecha_formateada
+                    );
+                    
+                    if (!empty($cita->motivo_rechazo)) {
+                        $mensaje .= "\n\n" . __('Motivo: ', 'sgep') . $cita->motivo_rechazo;
+                    }
+                    
+                    wp_mail($cliente->user_email, $asunto, $mensaje);
+                    break;
+                    
+                case 'fecha_propuesta':
+                    // Notificar al cliente sobre la nueva fecha propuesta
+                    $fecha_propuesta = new DateTime($cita->fecha_propuesta);
+                    $fecha_propuesta_formateada = $fecha_propuesta->format('d/m/Y H:i');
+                    
+                    $asunto = sprintf(__('Nueva fecha propuesta para tu cita', 'sgep'));
+                    $mensaje = sprintf(
+                        __('El especialista %s ha propuesto una nueva fecha para tu cita: %s. Por favor, ingresa a tu panel para aceptar o rechazar esta propuesta.', 'sgep'),
+                        $especialista->display_name,
+                        $fecha_propuesta_formateada
+                    );
+                    
+                    wp_mail($cliente->user_email, $asunto, $mensaje);
+                    break;
+                    
+                case 'nueva_fecha_aceptada':
+                    // Notificar al especialista que el cliente aceptó la nueva fecha
+                    $asunto = sprintf(__('Nueva fecha aceptada para la cita del %s', 'sgep'), $fecha_formateada);
+                    $mensaje = sprintf(
+                        __('El cliente %s ha aceptado la nueva fecha que propusiste para la cita (%s). La cita está pendiente de tu confirmación final.', 'sgep'),
+                        $cliente->display_name,
+                        $fecha_formateada
+                    );
+                    
+                    wp_mail($especialista->user_email, $asunto, $mensaje);
+                    break;
+                    
+                case 'nueva_fecha_rechazada':
+                    // Notificar al especialista que el cliente rechazó la nueva fecha
+                    $asunto = sprintf(__('Nueva fecha rechazada para la cita del %s', 'sgep'), $fecha_formateada);
+                    $mensaje = sprintf(
+                        __('El cliente %s ha rechazado la nueva fecha que propusiste para la cita. Se mantiene la fecha original (%s) y la cita está pendiente de tu confirmación.', 'sgep'),
+                        $cliente->display_name,
+                        $fecha_formateada
+                    );
+                    
+                    wp_mail($especialista->user_email, $asunto, $mensaje);
+                    break;
+                
+                case 'confirmada':
                 // Notificar al cliente
                 $asunto = sprintf(__('Cita confirmada para el %s', 'sgep'), $fecha_formateada);
                 $mensaje = sprintf(
