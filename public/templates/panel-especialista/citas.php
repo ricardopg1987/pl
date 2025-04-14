@@ -1,8 +1,8 @@
 <?php
 /**
- * Plantilla para la pestaña de citas del panel de especialista
+ * Plantilla para la pestaña de citas del panel de cliente
  * 
- * Ruta: /public/templates/panel-especialista/citas.php
+ * Ruta: /public/templates/panel-cliente/citas.php
  */
 
 // Evitar acceso directo
@@ -10,15 +10,21 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Declarar $wpdb como global
-global $wpdb;
-
-// Obtener especialista actual
-$especialista_id = get_current_user_id();
+// Obtener cliente actual
+$cliente_id = get_current_user_id();
 
 // Verificar acción
 $accion = isset($_GET['accion']) ? sanitize_text_field($_GET['accion']) : '';
 $cita_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Verificar si hay un parámetro agendar_con desde los resultados del test
+$agendar_con = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+if ($agendar_con > 0) {
+    $accion = 'agendar';
+    $especialista_id = $agendar_con;
+} else {
+    $especialista_id = isset($_GET['agendar_con']) ? intval($_GET['agendar_con']) : 0;
+}
 
 // Filtro
 $filtro = isset($_GET['filtro']) ? sanitize_text_field($_GET['filtro']) : '';
@@ -147,7 +153,7 @@ if ($accion === 'ver' && $cita_id > 0) {
                 <h4><?php _e('Acciones', 'sgep'); ?></h4>
                 
                 <form id="sgep_confirmar_cita_form" class="sgep-form">
-                    <input type="hidden" id="sgep_cita_id" name="sgep_cita_id" value="<?php echo esc_attr($cita_id); ?>">
+                    <input type="hidden" id="sgep_cita_id" value="<?php echo esc_attr($cita_id); ?>">
                     
                     <div class="sgep-form-field">
                         <label for="sgep_zoom_link"><?php _e('Enlace de Zoom (opcional)', 'sgep'); ?></label>
@@ -269,10 +275,10 @@ if ($accion === 'ver' && $cita_id > 0) {
                         </div>
                         
                         <div class="sgep-cita-actions">
-                            <a href="?tab=citas&accion=ver&id=<?php echo intval($cita->id); ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Ver', 'sgep'); ?></a>
+                            <a href="?tab=citas&accion=ver&id=<?php echo $cita->id; ?>" class="sgep-button sgep-button-sm sgep-button-primary"><?php _e('Ver', 'sgep'); ?></a>
                             
                             <?php if ($cita->estado === 'pendiente') : ?>
-                                <a href="#" class="sgep-button sgep-button-sm sgep-button-outline sgep-cancelar-cita" data-id="<?php echo intval($cita->id); ?>"><?php _e('Cancelar', 'sgep'); ?></a>
+                                <a href="#" class="sgep-button sgep-button-sm sgep-button-outline sgep-cancelar-cita" data-id="<?php echo $cita->id; ?>"><?php _e('Cancelar', 'sgep'); ?></a>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -284,4 +290,3 @@ if ($accion === 'ver' && $cita_id > 0) {
     </div>
     <?php
 }
-?>

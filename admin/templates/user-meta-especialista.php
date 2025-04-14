@@ -15,10 +15,10 @@ if (!defined('ABSPATH')) {
 
 <table class="form-table">
     <tr>
-        <th><label for="sgep_conocimientos"><?php _e('Conocimientos', 'sgep'); ?></label></th>
+        <th><label for="sgep_titulo"><?php _e('Título Profesional', 'sgep'); ?></label></th>
         <td>
-            <input type="text" name="sgep_conocimientos" id="sgep_conocimientos" value="<?php echo esc_attr($conocimientos); ?>" class="regular-text" />
-            <p class="description"><?php _e('Especifica tus conocimientos en terapias alternativas.', 'sgep'); ?></p>
+            <input type="text" name="sgep_titulo" id="sgep_titulo" value="<?php echo esc_attr($titulo); ?>" class="regular-text" />
+            <p class="description"><?php _e('Ejemplo: Psicólogo Clínico, Terapeuta, etc.', 'sgep'); ?></p>
         </td>
     </tr>
     
@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
         <th><label for="sgep_especialidad"><?php _e('Especialidad', 'sgep'); ?></label></th>
         <td>
             <input type="text" name="sgep_especialidad" id="sgep_especialidad" value="<?php echo esc_attr($especialidad); ?>" class="regular-text" />
-            <p class="description"><?php _e('Ejemplo: Terapia holística, Sanación energética, etc.', 'sgep'); ?></p>
+            <p class="description"><?php _e('Ejemplo: Terapia Cognitivo-Conductual, Psicoanálisis, etc.', 'sgep'); ?></p>
         </td>
     </tr>
     
@@ -99,31 +99,6 @@ if (!defined('ABSPATH')) {
         </td>
     </tr>
     
-    <!-- Nuevos campos para especialistas -->
-    <tr>
-        <th><label for="sgep_actividades"><?php _e('Actividades', 'sgep'); ?></label></th>
-        <td>
-            <textarea name="sgep_actividades" id="sgep_actividades" rows="3" cols="30" class="large-text"><?php echo esc_textarea($actividades); ?></textarea>
-            <p class="description"><?php _e('Describe las actividades que realizas en tus sesiones o talleres.', 'sgep'); ?></p>
-        </td>
-    </tr>
-    
-    <tr>
-        <th><label for="sgep_intereses"><?php _e('Intereses', 'sgep'); ?></label></th>
-        <td>
-            <textarea name="sgep_intereses" id="sgep_intereses" rows="3" cols="30" class="large-text"><?php echo esc_textarea($intereses); ?></textarea>
-            <p class="description"><?php _e('Comparte tus intereses profesionales y personales relacionados con las terapias.', 'sgep'); ?></p>
-        </td>
-    </tr>
-    
-    <tr>
-        <th><label for="sgep_filosofia"><?php _e('Filosofía Personal', 'sgep'); ?></label></th>
-        <td>
-            <textarea name="sgep_filosofia" id="sgep_filosofia" rows="3" cols="30" class="large-text"><?php echo esc_textarea($filosofia); ?></textarea>
-            <p class="description"><?php _e('Describe tu filosofía y enfoque terapéutico personal.', 'sgep'); ?></p>
-        </td>
-    </tr>
-    
     <tr>
         <th><label for="sgep_habilidades"><?php _e('Áreas de Especialización', 'sgep'); ?></label></th>
         <td>
@@ -145,14 +120,6 @@ if (!defined('ABSPATH')) {
                 'pareja' => __('Terapia de Pareja', 'sgep'),
                 'infantil' => __('Psicología Infantil', 'sgep'),
                 'adolescentes' => __('Psicología de Adolescentes', 'sgep'),
-                'reiki' => __('Reiki', 'sgep'),
-                'acupuntura' => __('Acupuntura', 'sgep'),
-                'terapia_sonido' => __('Terapia de Sonido', 'sgep'),
-                'sanacion_energetica' => __('Sanación Energética', 'sgep'),
-                'cristales' => __('Terapia con Cristales', 'sgep'),
-                'mindfulness' => __('Mindfulness', 'sgep'),
-                'meditacion' => __('Meditación', 'sgep'),
-                'yoga' => __('Yoga', 'sgep'),
             );
             
             foreach ($habilidades_options as $value => $label) :
@@ -164,6 +131,14 @@ if (!defined('ABSPATH')) {
                 </label><br>
             <?php endforeach; ?>
             <p class="description"><?php _e('Selecciona las áreas en las que te especializas.', 'sgep'); ?></p>
+        </td>
+    </tr>
+    
+    <tr>
+        <th><label for="sgep_rating"><?php _e('Valoración (0-5)', 'sgep'); ?></label></th>
+        <td>
+            <input type="number" name="sgep_rating" id="sgep_rating" value="<?php echo esc_attr($rating); ?>" class="small-text" min="0" max="5" step="0.1" />
+            <p class="description"><?php _e('Valoración promedio del especialista (de 0 a 5 estrellas).', 'sgep'); ?></p>
         </td>
     </tr>
 </table>

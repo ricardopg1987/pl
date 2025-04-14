@@ -1,65 +1,88 @@
 /**
  * JavaScript para la parte pública del plugin
  * 
- * Este archivo corrige los problemas de interacción AJAX
+ * Ruta: /public/js/sgep-public.js
  */
 
 jQuery(document).ready(function($) {
-    // Inicializar componentes
-    initAjaxComponents();
+    
+    // Variables globales
+    var sgep_ajax = window.sgep_ajax || {};
     
     /**
-     * Inicializar componentes AJAX
+     * Inicializar componentes
      */
-    function initAjaxComponents() {
+    function initComponents() {
+        // Inicializar círculos de compatibilidad
+        initCompatibilityCircles();
+        
         // Inicializar gestión de disponibilidad
         initDisponibilidad();
         
-        // Inicializar citas
+        // Inicializar agendamiento de citas
         initCitas();
         
         // Inicializar mensajes
         initMensajes();
-        
-        // Inicializar compra de productos
-        initProductos();
     }
     
     /**
-     * Inicializar gestión de disponibilidad
+     * Inicializar círculos de compatibilidad
+     */
+    function initCompatibilityCircles() {
+        $('.sgep-compatibility-circle').each(function() {
+            var percentage = $(this).data('percentage');
+            var color;
+            
+            // Asignar color según porcentaje
+            if (percentage >= 80) {
+                color = '#4caf50'; // Verde
+            } else if (percentage >= 60) {
+                color = '#2196f3'; // Azul
+            } else if (percentage >= 40) {
+                color = '#ff9800'; // Naranja
+            } else {
+                color = '#f44336'; // Rojo
+            }
+            
+            $(this).css('background-color', color);
+        });
+    }
+    
+    /**
+     * Inicializar gestión de disponibilidad (panel especialista)
      */
     function initDisponibilidad() {
-        var $disponibilidadForm = $('#sgep_disponibilidad_form');
-        
-        // Mostrar formulario al hacer clic en "Añadir horario"
+        // Mostrar formulario para agregar disponibilidad
         $('.sgep-disponibilidad-add').on('click', function() {
             var dia = $(this).data('dia');
-            
             $('#sgep_dia_semana').val(dia);
-            $disponibilidadForm.show();
+            $('.sgep-disponibilidad-form').slideDown();
             $('html, body').animate({
-                scrollTop: $disponibilidadForm.offset().top - 50
+                scrollTop: $('.sgep-disponibilidad-form').offset().top - 100
             }, 500);
         });
         
         // Cancelar formulario
-        $('#sgep_disponibilidad_cancel').on('click', function() {
-            $disponibilidadForm.hide();
+        $('#sgep_disponibilidad_cancel').on('click', function(e) {
+            e.preventDefault();
+            $('.sgep-disponibilidad-form').slideUp();
+            $('#sgep_disponibilidad_form')[0].reset();
         });
         
-        // Enviar formulario de disponibilidad
-        $disponibilidadForm.on('submit', function(e) {
+        // Guardar disponibilidad
+        $('#sgep_disponibilidad_form').on('submit', function(e) {
             e.preventDefault();
             
             var form = $(this);
             var btn = form.find('[type="submit"]');
-            var dia = $('#sgep_dia_semana').val();
-            var horaInicio = $('#sgep_hora_inicio').val();
-            var horaFin = $('#sgep_hora_fin').val();
+            var diaSelector = form.find('#sgep_dia_semana');
+            var horaInicio = form.find('#sgep_hora_inicio').val();
+            var horaFin = form.find('#sgep_hora_fin').val();
             
-            // Validar datos
-            if (horaInicio >= horaFin) {
-                alert('La hora de inicio debe ser anterior a la hora de fin.');
+            // Validaciones
+            if (!horaInicio || !horaFin) {
+                alert('Por favor, especifica la hora de inicio y fin.');
                 return;
             }
             
@@ -72,16 +95,19 @@ jQuery(document).ready(function($) {
                 data: {
                     action: 'sgep_guardar_disponibilidad',
                     nonce: sgep_ajax.nonce,
-                    dia_semana: dia,
+                    dia_semana: diaSelector.val(),
                     hora_inicio: horaInicio,
                     hora_fin: horaFin
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Recargar página con mensaje de éxito
-                        window.location.href = '?tab=disponibilidad&msg=disponibilidad_actualizada';
+                        // Mostrar mensaje de éxito
+                        alert(response.data.message);
+                        
+                        // Recargar página
+                        location.reload();
                     } else {
-                        alert(response.data || 'Error al guardar la disponibilidad');
+                        alert(response.data);
                     }
                 },
                 error: function() {
@@ -94,13 +120,15 @@ jQuery(document).ready(function($) {
         });
         
         // Eliminar disponibilidad
-        $(document).on('click', '.sgep-disponibilidad-action', function() {
+        $('.sgep-disponibilidad-action').on('click', function(e) {
+            e.preventDefault();
+            
             if (!confirm('¿Estás seguro de eliminar este horario de disponibilidad?')) {
                 return;
             }
             
             var btn = $(this);
-            var slotId = btn.data('id');
+            var id = btn.data('id');
             
             $.ajax({
                 url: sgep_ajax.ajax_url,
@@ -108,14 +136,16 @@ jQuery(document).ready(function($) {
                 data: {
                     action: 'sgep_eliminar_disponibilidad',
                     nonce: sgep_ajax.nonce,
-                    id: slotId
+                    id: id
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Recargar página con mensaje de éxito
-                        window.location.href = '?tab=disponibilidad&msg=disponibilidad_actualizada';
+                        // Eliminar elemento del DOM
+                        btn.closest('.sgep-disponibilidad-slot').fadeOut(300, function() {
+                            $(this).remove();
+                        });
                     } else {
-                        alert(response.data || 'Error al eliminar la disponibilidad');
+                        alert(response.data);
                     }
                 },
                 error: function() {
@@ -168,7 +198,7 @@ jQuery(document).ready(function($) {
                         // Redireccionar a la página de citas
                         window.location.href = '?tab=citas';
                     } else {
-                        alert(response.data || 'Error al agendar la cita');
+                        alert(response.data);
                     }
                 },
                 error: function() {
@@ -226,7 +256,7 @@ jQuery(document).ready(function($) {
         });
         
         // Cancelar cita
-        $(document).on('click', '.sgep-cancelar-cita', function(e) {
+        $('.sgep-cancelar-cita').on('click', function(e) {
             e.preventDefault();
             
             if (!confirm('¿Estás seguro de cancelar esta cita?')) {
@@ -235,15 +265,6 @@ jQuery(document).ready(function($) {
             
             var btn = $(this);
             var citaId = btn.data('id');
-            
-            // Verificar que el ID es válido
-            if (!citaId || isNaN(citaId) || citaId <= 0) {
-                alert('ID de cita inválido.');
-                return;
-            }
-            
-            // Mostrar indicador de carga
-            btn.prop('disabled', true).text('Cancelando...');
             
             $.ajax({
                 url: sgep_ajax.ajax_url,
@@ -261,21 +282,17 @@ jQuery(document).ready(function($) {
                         // Recargar página
                         location.reload();
                     } else {
-                        alert(response.data || 'Error al cancelar la cita.');
+                        alert(response.data);
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error('Error AJAX:', error);
+                error: function() {
                     alert('Error al cancelar la cita. Por favor, intenta nuevamente.');
-                },
-                complete: function() {
-                    btn.prop('disabled', false).text('Cancelar');
                 }
             });
         });
         
         // Confirmar cita (para especialistas)
-        $(document).on('submit', '#sgep_confirmar_cita_form', function(e) {
+        $('#sgep_confirmar_cita_form').on('submit', function(e) {
             e.preventDefault();
             
             var form = $(this);
@@ -286,8 +303,7 @@ jQuery(document).ready(function($) {
             var zoomPassword = form.find('#sgep_zoom_password').val();
             
             // Validaciones
-            if (!citaId || isNaN(citaId) || citaId <= 0) {
-                alert('ID de cita inválido.');
+            if (!citaId) {
                 return;
             }
             
@@ -313,11 +329,10 @@ jQuery(document).ready(function($) {
                         // Recargar página
                         location.reload();
                     } else {
-                        alert(response.data || 'Error al confirmar la cita.');
+                        alert(response.data);
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error('Error AJAX:', error);
+                error: function() {
                     alert('Error al confirmar la cita. Por favor, intenta nuevamente.');
                 },
                 complete: function() {
@@ -331,8 +346,8 @@ jQuery(document).ready(function($) {
      * Inicializar mensajes
      */
     function initMensajes() {
-        // Enviar mensaje
-        $(document).on('submit', '#sgep_enviar_mensaje_form', function(e) {
+        // Formulario para enviar mensaje
+        $('#sgep_enviar_mensaje_form').on('submit', function(e) {
             e.preventDefault();
             
             var form = $(this);
@@ -341,16 +356,15 @@ jQuery(document).ready(function($) {
             var asunto = form.find('#sgep_asunto').val();
             var mensaje = form.find('#sgep_mensaje').val();
             
-            // Validar campos
+            // Validaciones
             if (!destinatarioId || !asunto || !mensaje) {
-                alert('Por favor completa todos los campos');
+                alert('Por favor, completa todos los campos.');
                 return;
             }
             
-            // Deshabilitar botón mientras se procesa
+            // Enviar petición AJAX
             btn.prop('disabled', true).text('Enviando...');
             
-            // Enviar mensaje por AJAX
             $.ajax({
                 url: sgep_ajax.ajax_url,
                 type: 'POST',
@@ -363,18 +377,13 @@ jQuery(document).ready(function($) {
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Limpiar formulario
-                        form[0].reset();
-                        
                         // Mostrar mensaje de éxito
                         alert(response.data.message);
                         
-                        // Redireccionar si no estamos en un modal
-                        if (!form.hasClass('sgep-mensaje-rapido-form')) {
-                            window.location.href = '?tab=mensajes';
-                        }
+                        // Redireccionar a la página de mensajes
+                        window.location.href = '?tab=mensajes';
                     } else {
-                        alert(response.data || 'Error al enviar el mensaje');
+                        alert(response.data);
                     }
                 },
                 error: function() {
@@ -386,95 +395,150 @@ jQuery(document).ready(function($) {
             });
         });
         
-        // Tabs de mensajes
-        $('.sgep-mensajes-tabs-nav a').on('click', function(e) {
-            e.preventDefault();
-            var target = $(this).attr('href');
+        // Marcar mensaje como leído
+        $('.sgep-mensaje-item').on('click', function() {
+            var item = $(this);
             
-            // Activar la pestaña
-            $('.sgep-mensajes-tabs-nav li').removeClass('active');
-            $(this).parent().addClass('active');
+            if (!item.hasClass('sgep-mensaje-no-leido')) {
+                return;
+            }
             
-            // Mostrar contenido
-            $('.sgep-mensajes-tab-panel').removeClass('active');
-            $(target).addClass('active');
+            var mensajeId = item.data('id');
+            
+            $.ajax({
+                url: sgep_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'sgep_marcar_mensaje_leido',
+                    nonce: sgep_ajax.nonce,
+                    mensaje_id: mensajeId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        item.removeClass('sgep-mensaje-no-leido');
+                    }
+                }
+            });
         });
     }
     
     /**
-     * Inicializar productos
+     * Inicializar filtrado de especialistas
      */
-    function initProductos() {
-        // Modal de detalles de producto
-        $(document).on('click', '.sgep-producto-detalles-btn', function(e) {
-            e.preventDefault();
-            var productoId = $(this).data('id');
+    function initFiltradoEspecialistas() {
+        // Filtrado AJAX de especialistas (para directorio público)
+        $('#sgep_filtrar_especialistas').on('change', function() {
+            var form = $(this).closest('form');
+            var especialidad = form.find('[name="especialidad"]').val();
+            var modalidad = form.find('[name="modalidad"]').val();
+            var genero = form.find('[name="genero"]').val();
+            var resultadosContainer = $('.sgep-directorio-results');
             
-            // Cargar detalles del producto con AJAX
+            // Mostrar indicador de carga
+            resultadosContainer.html('<div class="sgep-loading">Cargando especialistas...</div>');
+            
             $.ajax({
                 url: sgep_ajax.ajax_url,
                 type: 'GET',
                 data: {
-                    action: 'sgep_obtener_producto_detalles',
-                    nonce: sgep_ajax.nonce,
-                    producto_id: productoId
+                    action: 'sgep_obtener_especialistas',
+                    especialidad: especialidad,
+                    modalidad: modalidad,
+                    genero: genero
                 },
                 success: function(response) {
-                    if (response.success) {
-                        $('#sgep-producto-modal-contenido').html(response.data.html);
-                        $('#sgep-producto-modal').fadeIn(300);
+                    if (response.success && response.data.especialistas) {
+                        renderizarEspecialistas(response.data.especialistas, resultadosContainer);
                     } else {
-                        alert(response.data || 'Error al cargar los detalles del producto');
+                        resultadosContainer.html('<p class="sgep-no-results">No se encontraron especialistas que coincidan con los filtros aplicados.</p>');
                     }
                 },
                 error: function() {
-                    alert('Error al cargar los detalles del producto. Por favor, intenta nuevamente.');
+                    resultadosContainer.html('<p class="sgep-no-results">Error al cargar especialistas. Por favor, intenta nuevamente.</p>');
                 }
             });
         });
-        
-        // Cerrar modal
-        $(document).on('click', '.sgep-modal-close', function() {
-            $('.sgep-modal').fadeOut(300);
-        });
-        
-        // Cerrar al hacer clic fuera del modal
-        $(window).on('click', function(e) {
-            if ($(e.target).hasClass('sgep-modal')) {
-                $('.sgep-modal').fadeOut(300);
-            }
-        });
-        
-        // Compra de productos
-        $(document).on('click', '.sgep-comprar-producto', function(e) {
-            e.preventDefault();
-            var productoId = $(this).data('id');
-            var productoNombre = $(this).data('nombre');
-            var productoPrecio = $(this).data('precio');
-            
-            if (confirm('¿Deseas comprar el producto "' + productoNombre + '" por ' + productoPrecio + '?')) {
-                // Implementar lógica de compra
-                $.ajax({
-                    url: sgep_ajax.ajax_url,
-                    type: 'POST',
-                    data: {
-                        action: 'sgep_comprar_producto',
-                        nonce: sgep_ajax.nonce,
-                        producto_id: productoId
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert(response.data.message);
-                            location.reload();
-                        } else {
-                            alert(response.data || 'Error al procesar la compra');
-                        }
-                    },
-                    error: function() {
-                        alert('Error al procesar la compra. Por favor, intenta nuevamente.');
-                    }
-                });
-            }
-        });
     }
+    
+    /**
+     * Renderizar especialistas filtrados
+     */
+    function renderizarEspecialistas(especialistas, container) {
+        if (!especialistas || especialistas.length === 0) {
+            container.html('<p class="sgep-no-results">No se encontraron especialistas que coincidan con los filtros aplicados.</p>');
+            return;
+        }
+        
+        var html = '<div class="sgep-especialistas-grid">';
+        
+        especialistas.forEach(function(especialista) {
+            html += '<div class="sgep-especialista-card">';
+            html += '<div class="sgep-especialista-header">';
+            html += '<div class="sgep-especialista-avatar"><img src="' + especialista.avatar + '" alt="Avatar"></div>';
+            
+            if (especialista.rating) {
+                html += '<div class="sgep-especialista-rating">';
+                
+                // Generar estrellas según rating
+                var ratingValue = parseFloat(especialista.rating);
+                for (var i = 1; i <= 5; i++) {
+                    if (i <= ratingValue) {
+                        html += '<span class="sgep-star sgep-star-full">★</span>';
+                    } else if (i - 0.5 <= ratingValue) {
+                        html += '<span class="sgep-star sgep-star-half">★</span>';
+                    } else {
+                        html += '<span class="sgep-star sgep-star-empty">☆</span>';
+                    }
+                }
+                
+                html += '<span class="sgep-rating-value">' + ratingValue.toFixed(1) + '</span>';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            html += '<div class="sgep-especialista-content">';
+            html += '<h3>' + especialista.nombre + '</h3>';
+            
+            if (especialista.especialidad) {
+                html += '<p class="sgep-especialista-specialty">' + especialista.especialidad + '</p>';
+            }
+            
+            html += '<div class="sgep-especialista-tags">';
+            
+            if (especialista.online) {
+                html += '<span class="sgep-tag">Online</span>';
+            }
+            
+            if (especialista.presencial) {
+                html += '<span class="sgep-tag">Presencial</span>';
+            }
+            
+            html += '</div>';
+            
+            if (especialista.precio) {
+                html += '<p class="sgep-especialista-price">Precio consulta: ' + especialista.precio + '</p>';
+            }
+            
+            html += '</div>';
+            html += '<div class="sgep-especialista-actions">';
+            html += '<a href="?ver_especialista=' + especialista.id + '" class="sgep-button sgep-button-secondary">Ver Perfil</a>';
+            
+            // Verificar si el usuario está logueado
+            if (sgep_ajax.is_logged_in) {
+                html += '<a href="?agendar_con=' + especialista.id + '" class="sgep-button sgep-button-primary">Agendar Cita</a>';
+            } else {
+                html += '<a href="' + sgep_ajax.login_url + '" class="sgep-button sgep-button-primary">Iniciar Sesión para Agendar</a>';
+            }
+            
+            html += '</div>';
+            html += '</div>';
+        });
+        
+        html += '</div>';
+        container.html(html);
+    }
+    
+    // Inicializar todos los componentes
+    initComponents();
+    initFiltradoEspecialistas();
 });

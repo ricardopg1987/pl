@@ -3,6 +3,7 @@
  * Plantilla para la pestaña de perfil del panel de especialista
  * 
  * Ruta: /public/templates/panel-especialista/perfil.php
+ * Versión con estilo original pero con capacidad de carga de imágenes
  */
 
 // Evitar acceso directo
@@ -18,8 +19,7 @@ $usuario = get_userdata($especialista_id);
 $especialidad = get_user_meta($especialista_id, 'sgep_especialidad', true);
 $descripcion = get_user_meta($especialista_id, 'sgep_descripcion', true);
 $experiencia = get_user_meta($especialista_id, 'sgep_experiencia', true);
-// Cambio: Reemplazar "título profesional" por "conocimientos"
-$conocimientos = get_user_meta($especialista_id, 'sgep_conocimientos', true);
+$titulo = get_user_meta($especialista_id, 'sgep_titulo', true);
 $precio_consulta = get_user_meta($especialista_id, 'sgep_precio_consulta', true);
 $duracion_consulta = get_user_meta($especialista_id, 'sgep_duracion_consulta', true);
 $acepta_online = get_user_meta($especialista_id, 'sgep_acepta_online', true);
@@ -28,10 +28,6 @@ $habilidades = get_user_meta($especialista_id, 'sgep_habilidades', true);
 $metodologias = get_user_meta($especialista_id, 'sgep_metodologias', true);
 $genero = get_user_meta($especialista_id, 'sgep_genero', true);
 $imagen_perfil = get_user_meta($especialista_id, 'sgep_imagen_perfil', true);
-// Nuevos campos
-$actividades = get_user_meta($especialista_id, 'sgep_actividades', true);
-$intereses = get_user_meta($especialista_id, 'sgep_intereses', true);
-$filosofia = get_user_meta($especialista_id, 'sgep_filosofia', true);
 
 // Mensaje para almacenar resultado del procesamiento del formulario
 $mensaje_perfil = '';
@@ -43,8 +39,7 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     $especialidad = sanitize_text_field($_POST['sgep_especialidad']);
     $descripcion = sanitize_textarea_field($_POST['sgep_descripcion']);
     $experiencia = sanitize_text_field($_POST['sgep_experiencia']);
-    // Actualizar campo de conocimientos en lugar de título
-    $conocimientos = sanitize_text_field($_POST['sgep_conocimientos']);
+    $titulo = sanitize_text_field($_POST['sgep_titulo']);
     $precio_consulta = sanitize_text_field($_POST['sgep_precio_consulta']);
     $duracion_consulta = intval($_POST['sgep_duracion_consulta']);
     $acepta_online = isset($_POST['sgep_acepta_online']) ? 1 : 0;
@@ -52,10 +47,6 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     $habilidades = isset($_POST['sgep_habilidades']) ? (array) $_POST['sgep_habilidades'] : array();
     $metodologias = sanitize_text_field($_POST['sgep_metodologias']);
     $genero = sanitize_text_field($_POST['sgep_genero']);
-    // Procesar nuevos campos
-    $actividades = sanitize_textarea_field($_POST['sgep_actividades']);
-    $intereses = sanitize_textarea_field($_POST['sgep_intereses']);
-    $filosofia = sanitize_textarea_field($_POST['sgep_filosofia']);
     
     // Manejo de la imagen de perfil
     if (!empty($_FILES['sgep_imagen_perfil']['name'])) {
@@ -90,8 +81,7 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     update_user_meta($especialista_id, 'sgep_especialidad', $especialidad);
     update_user_meta($especialista_id, 'sgep_descripcion', $descripcion);
     update_user_meta($especialista_id, 'sgep_experiencia', $experiencia);
-    // Actualizar conocimientos en lugar de título
-    update_user_meta($especialista_id, 'sgep_conocimientos', $conocimientos);
+    update_user_meta($especialista_id, 'sgep_titulo', $titulo);
     update_user_meta($especialista_id, 'sgep_precio_consulta', $precio_consulta);
     update_user_meta($especialista_id, 'sgep_duracion_consulta', $duracion_consulta);
     update_user_meta($especialista_id, 'sgep_acepta_online', $acepta_online);
@@ -99,10 +89,6 @@ if (isset($_POST['sgep_perfil_nonce']) && wp_verify_nonce($_POST['sgep_perfil_no
     update_user_meta($especialista_id, 'sgep_habilidades', $habilidades);
     update_user_meta($especialista_id, 'sgep_metodologias', $metodologias);
     update_user_meta($especialista_id, 'sgep_genero', $genero);
-    // Actualizar nuevos campos
-    update_user_meta($especialista_id, 'sgep_actividades', $actividades);
-    update_user_meta($especialista_id, 'sgep_intereses', $intereses);
-    update_user_meta($especialista_id, 'sgep_filosofia', $filosofia);
     
     // Configurar mensaje de éxito
     if (empty($mensaje_perfil)) {
@@ -151,6 +137,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }, 5000);
     }
+    
+    // Vista previa de la imagen
+    var inputImagen = document.getElementById('sgep_imagen_perfil');
+    var previewImagen = document.getElementById('sgep_preview_imagen');
+    var previewContainer = document.getElementById('sgep_preview_container');
+    
+    if (inputImagen && previewImagen) {
+        inputImagen.addEventListener('change', function() {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImagen.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 </script>
 
@@ -161,63 +166,17 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     <?php endif; ?>
     
-    <div class="sgep-perfil-destacado">
-        <div class="sgep-perfil-card">
-            <div class="sgep-perfil-header">
-                <div class="sgep-perfil-imagen">
-                    <?php if (!empty($imagen_perfil)) : ?>
-                        <img src="<?php echo esc_url($imagen_perfil); ?>" alt="<?php echo esc_attr($usuario->display_name); ?>">
-                    <?php else : ?>
-                        <?php echo get_avatar($especialista_id, 120); ?>
-                    <?php endif; ?>
-                </div>
-                <div class="sgep-perfil-info">
-                    <h3><?php echo esc_html($usuario->display_name); ?></h3>
-                    <div class="sgep-perfil-meta">
-                        <?php if (!empty($conocimientos)) : ?>
-                            <span class="sgep-perfil-titulo"><?php echo esc_html($conocimientos); ?></span>
-                        <?php endif; ?>
-                        <?php if (!empty($conocimientos) && !empty($especialidad)) : ?>
-                            <span class="sgep-perfil-separador">|</span>
-                        <?php endif; ?>
-                        <?php if (!empty($especialidad)) : ?>
-                            <span class="sgep-perfil-especialidad"><?php echo esc_html($especialidad); ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <p class="sgep-perfil-contacto"><?php echo esc_html($usuario->user_email); ?></p>
-                </div>
-            </div>
-            
-            <div class="sgep-perfil-stats">
-                <?php if (!empty($experiencia)) : ?>
-                    <div class="sgep-stat-item">
-                        <div class="sgep-stat-value"><?php echo esc_html($experiencia); ?></div>
-                        <div class="sgep-stat-label"><?php _e('Años de Experiencia', 'sgep'); ?></div>
-                    </div>
-                <?php endif; ?>
-                
-                <div class="sgep-stat-item">
-                    <div class="sgep-stat-value">
-                        <?php 
-                            // Contar número de citas
-                            global $wpdb;
-                            $total_citas = $wpdb->get_var($wpdb->prepare(
-                                "SELECT COUNT(*) FROM {$wpdb->prefix}sgep_citas WHERE especialista_id = %d AND estado = 'confirmada'",
-                                $especialista_id
-                            ));
-                            echo esc_html($total_citas);
-                        ?>
-                    </div>
-                    <div class="sgep-stat-label"><?php _e('Consultas Realizadas', 'sgep'); ?></div>
-                </div>
-                
-                <?php if (!empty($precio_consulta)) : ?>
-                    <div class="sgep-stat-item">
-                        <div class="sgep-stat-value"><?php echo esc_html($precio_consulta); ?></div>
-                        <div class="sgep-stat-label"><?php _e('Precio Consulta', 'sgep'); ?></div>
-                    </div>
-                <?php endif; ?>
-            </div>
+    <div class="sgep-perfil-header">
+        <div class="sgep-perfil-avatar">
+            <?php if (!empty($imagen_perfil)) : ?>
+                <img src="<?php echo esc_url($imagen_perfil); ?>" alt="<?php echo esc_attr($usuario->display_name); ?>" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+            <?php else : ?>
+                <?php echo get_avatar($especialista_id, 100); ?>
+            <?php endif; ?>
+        </div>
+        <div class="sgep-perfil-info">
+            <h3><?php echo esc_html($usuario->display_name); ?></h3>
+            <p class="sgep-perfil-meta"><?php echo esc_html($usuario->user_email); ?></p>
         </div>
     </div>
     
@@ -227,27 +186,14 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="sgep-perfil-section">
             <h4><?php _e('Imagen de Perfil', 'sgep'); ?></h4>
             
-            <div class="sgep-img-upload">
-                <div class="sgep-current-img">
-                    <?php if (!empty($imagen_perfil)) : ?>
-                        <img src="<?php echo esc_url($imagen_perfil); ?>" alt="<?php echo esc_attr($usuario->display_name); ?>">
-                    <?php else : ?>
-                        <?php echo get_avatar($especialista_id, 150); ?>
-                    <?php endif; ?>
-                </div>
+            <div class="sgep-form-field">
+                <label for="sgep_imagen_perfil"><?php _e('Seleccionar imagen', 'sgep'); ?></label>
+                <input type="file" id="sgep_imagen_perfil" name="sgep_imagen_perfil" accept="image/*">
+                <p class="sgep-field-description"><?php _e('Sube una imagen profesional para tu perfil. Formatos: JPG, PNG. Tamaño máximo: 2MB.', 'sgep'); ?></p>
                 
-                <div class="sgep-upload-controls">
-                    <label for="sgep_imagen_perfil" class="sgep-upload-label">
-                        <span class="dashicons dashicons-camera"></span>
-                        <?php _e('Seleccionar imagen', 'sgep'); ?>
-                    </label>
-                    <input type="file" id="sgep_imagen_perfil" name="sgep_imagen_perfil" accept="image/*" class="sgep-file-input">
-                    <p class="sgep-field-description"><?php _e('Sube una imagen profesional para tu perfil. Formatos: JPG, PNG. Tamaño máximo: 2MB.', 'sgep'); ?></p>
-                    
-                    <div id="sgep_preview_container" class="sgep-preview-container" style="display: none;">
-                        <p><?php _e('Vista previa:', 'sgep'); ?></p>
-                        <img src="" id="sgep_preview_imagen" class="sgep-preview-img" alt="<?php _e('Vista previa', 'sgep'); ?>">
-                    </div>
+                <div id="sgep_preview_container" style="display: none; margin-top: 10px;">
+                    <p><?php _e('Vista previa:', 'sgep'); ?></p>
+                    <img src="" id="sgep_preview_imagen" alt="<?php _e('Vista previa', 'sgep'); ?>" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
                 </div>
             </div>
         </div>
@@ -258,9 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="sgep-form-row">
                 <div class="sgep-form-col">
                     <div class="sgep-form-field">
-                        <label for="sgep_conocimientos"><?php _e('Conocimientos', 'sgep'); ?></label>
-                        <input type="text" id="sgep_conocimientos" name="sgep_conocimientos" value="<?php echo esc_attr($conocimientos); ?>">
-                        <p class="sgep-field-description"><?php _e('Especifica tus conocimientos y formación en terapias alternativas/holísticas.', 'sgep'); ?></p>
+                        <label for="sgep_titulo"><?php _e('Título Profesional', 'sgep'); ?></label>
+                        <input type="text" id="sgep_titulo" name="sgep_titulo" value="<?php echo esc_attr($titulo); ?>">
+                        <p class="sgep-field-description"><?php _e('Ejemplo: Psicólogo Clínico, Terapeuta, etc.', 'sgep'); ?></p>
                     </div>
                 </div>
                 
@@ -268,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="sgep-form-field">
                         <label for="sgep_especialidad"><?php _e('Especialidad', 'sgep'); ?></label>
                         <input type="text" id="sgep_especialidad" name="sgep_especialidad" value="<?php echo esc_attr($especialidad); ?>">
-                        <p class="sgep-field-description"><?php _e('Ejemplo: Terapia holística, Sanación energética, etc.', 'sgep'); ?></p>
+                        <p class="sgep-field-description"><?php _e('Ejemplo: Terapia Cognitivo-Conductual, Psicoanálisis, etc.', 'sgep'); ?></p>
                     </div>
                 </div>
             </div>
@@ -298,25 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <textarea id="sgep_descripcion" name="sgep_descripcion" rows="5"><?php echo esc_textarea($descripcion); ?></textarea>
                 <p class="sgep-field-description"><?php _e('Breve descripción o biografía que será visible para los clientes.', 'sgep'); ?></p>
             </div>
-            
-            <!-- Nuevos campos para actividades, intereses y filosofía personal -->
-            <div class="sgep-form-field">
-                <label for="sgep_actividades"><?php _e('Actividades', 'sgep'); ?></label>
-                <textarea id="sgep_actividades" name="sgep_actividades" rows="3"><?php echo esc_textarea($actividades); ?></textarea>
-                <p class="sgep-field-description"><?php _e('Describe las actividades que realizas en tus sesiones o talleres.', 'sgep'); ?></p>
-            </div>
-            
-            <div class="sgep-form-field">
-                <label for="sgep_intereses"><?php _e('Intereses', 'sgep'); ?></label>
-                <textarea id="sgep_intereses" name="sgep_intereses" rows="3"><?php echo esc_textarea($intereses); ?></textarea>
-                <p class="sgep-field-description"><?php _e('Comparte tus intereses profesionales y personales relacionados con las terapias.', 'sgep'); ?></p>
-            </div>
-            
-            <div class="sgep-form-field">
-                <label for="sgep_filosofia"><?php _e('Filosofía Personal', 'sgep'); ?></label>
-                <textarea id="sgep_filosofia" name="sgep_filosofia" rows="3"><?php echo esc_textarea($filosofia); ?></textarea>
-                <p class="sgep-field-description"><?php _e('Describe tu filosofía y enfoque terapéutico personal.', 'sgep'); ?></p>
-            </div>
         </div>
         
         <div class="sgep-perfil-section">
@@ -343,19 +270,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="sgep-form-col">
                     <div class="sgep-form-field">
                         <label><?php _e('Modalidades de Atención', 'sgep'); ?></label>
-                        <div class="sgep-checkbox-group">
-                            <label class="sgep-fancy-checkbox">
-                                <input type="checkbox" id="sgep_acepta_online" name="sgep_acepta_online" value="1" <?php checked($acepta_online, 1); ?>>
-                                <span class="sgep-checkbox-indicator"></span>
-                                <?php _e('Atiendo Online', 'sgep'); ?>
-                            </label>
-                            
-                            <label class="sgep-fancy-checkbox">
-                                <input type="checkbox" id="sgep_acepta_presencial" name="sgep_acepta_presencial" value="1" <?php checked($acepta_presencial, 1); ?>>
-                                <span class="sgep-checkbox-indicator"></span>
-                                <?php _e('Atiendo Presencial', 'sgep'); ?>
-                            </label>
-                        </div>
+                        <label class="sgep-checkbox">
+                            <input type="checkbox" id="sgep_acepta_online" name="sgep_acepta_online" value="1" <?php checked($acepta_online, 1); ?>>
+                            <?php _e('Atiendo Online', 'sgep'); ?>
+                        </label>
+                        <label class="sgep-checkbox">
+                            <input type="checkbox" id="sgep_acepta_presencial" name="sgep_acepta_presencial" value="1" <?php checked($acepta_presencial, 1); ?>>
+                            <?php _e('Atiendo Presencial', 'sgep'); ?>
+                        </label>
                     </div>
                 </div>
                 
@@ -375,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="sgep-perfil-section">
             <h4><?php _e('Áreas de Especialización', 'sgep'); ?></h4>
             
-            <div class="sgep-habilidades-grid">
+            <div class="sgep-form-field">
                 <?php
                 $habilidades_options = array(
                     'ansiedad' => __('Ansiedad', 'sgep'),
@@ -394,29 +316,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     'pareja' => __('Terapia de Pareja', 'sgep'),
                     'infantil' => __('Psicología Infantil', 'sgep'),
                     'adolescentes' => __('Psicología de Adolescentes', 'sgep'),
-                    'reiki' => __('Reiki', 'sgep'),
-                    'acupuntura' => __('Acupuntura', 'sgep'),
-                    'terapia_sonido' => __('Terapia de Sonido', 'sgep'),
-                    'sanacion_energetica' => __('Sanación Energética', 'sgep'),
-                    'cristales' => __('Terapia con Cristales', 'sgep'),
-                    'mindfulness' => __('Mindfulness', 'sgep'),
-                    'meditacion' => __('Meditación', 'sgep'),
-                    'yoga' => __('Yoga', 'sgep'),
                 );
                 
                 foreach ($habilidades_options as $value => $label) :
                     $checked = is_array($habilidades) && in_array($value, $habilidades) ? 'checked="checked"' : '';
                 ?>
-                    <label class="sgep-fancy-checkbox">
+                    <label class="sgep-checkbox">
                         <input type="checkbox" name="sgep_habilidades[]" value="<?php echo esc_attr($value); ?>" <?php echo $checked; ?>>
-                        <span class="sgep-checkbox-indicator"></span>
                         <?php echo esc_html($label); ?>
                     </label>
                 <?php 
                 endforeach;
                 ?>
+                <p class="sgep-field-description"><?php _e('Selecciona las áreas en las que te especializas.', 'sgep'); ?></p>
             </div>
-            <p class="sgep-field-description"><?php _e('Selecciona las áreas en las que te especializas.', 'sgep'); ?></p>
         </div>
         
         <div class="sgep-form-actions">
@@ -424,3 +337,34 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </form>
 </div>
+
+<style>
+/* Estilos mínimos para vista previa de imagen */
+#sgep_preview_container {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px dashed #ddd;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+#sgep_preview_imagen {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Mejoras para las checkboxes de habilidades */
+.sgep-checkbox {
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Asegurar que las imágenes se muestren correctamente */
+.sgep-perfil-avatar img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+</style>

@@ -151,8 +151,8 @@ if ($accion === 'ver' && $cita_id > 0) {
         
         <?php if ($cita->estado !== 'cancelada') : ?>
             <div class="sgep-cita-actions">
-    <a href="#" class="sgep-button sgep-button-sm sgep-button-outline sgep-cancelar-cita" data-id="<?php echo $cita->id; ?>"><?php _e('Cancelar', 'sgep'); ?></a>
-</div>
+                <a href="#" class="sgep-button sgep-button-secondary sgep-cancelar-cita" data-id="<?php echo esc_attr($cita_id); ?>"><?php _e('Cancelar Cita', 'sgep'); ?></a>
+            </div>
         <?php endif; ?>
         
         <div class="sgep-cita-footer">
