@@ -24,6 +24,7 @@ class SGEP_Ajax {
         add_action('wp_ajax_sgep_confirmar_cita', array($this, 'confirmar_cita'));
         add_action('wp_ajax_sgep_enviar_mensaje', array($this, 'enviar_mensaje'));
         add_action('wp_ajax_sgep_marcar_mensaje_leido', array($this, 'marcar_mensaje_leido'));
+        add_action('wp_ajax_sgep_obtener_horas_disponibles', array($this, 'obtener_horas_disponibles'));
         
         // Acciones para usuarios no logueados
         add_action('wp_ajax_nopriv_sgep_obtener_especialistas', array($this, 'obtener_especialistas'));
@@ -353,6 +354,79 @@ class SGEP_Ajax {
         wp_send_json_success(array(
             'message' => __('Cita confirmada correctamente.', 'sgep')
         ));
+    }
+    
+    /**
+     * Obtener horas disponibles para una fecha específica
+     */
+    public function obtener_horas_disponibles() {
+        // Verificar nonce
+        check_ajax_referer('sgep_ajax_nonce', 'nonce');
+        
+        // Obtener datos
+        $especialista_id = isset($_GET['especialista_id']) ? intval($_GET['especialista_id']) : 0;
+        $fecha = isset($_GET['fecha']) ? sanitize_text_field($_GET['fecha']) : '';
+        
+        // Validar datos
+        if ($especialista_id <= 0 || empty($fecha)) {
+            wp_send_json_error(__('Parámetros inválidos.', 'sgep'));
+        }
+        
+        // Obtener día de la semana para la fecha seleccionada
+        $timestamp = strtotime($fecha);
+        $dia_semana = date('w', $timestamp);
+        
+        // Obtener disponibilidad del especialista para ese día
+        global $wpdb;
+        $disponibilidad = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}sgep_disponibilidad 
+            WHERE especialista_id = %d AND dia_semana = %d 
+            ORDER BY hora_inicio",
+            $especialista_id, $dia_semana
+        ));
+        
+        if (empty($disponibilidad)) {
+            wp_send_json_success(array('horas' => array()));
+            return;
+        }
+        
+        // Obtener citas ya agendadas para esa fecha
+        $citas = $wpdb->get_results($wpdb->prepare(
+            "SELECT TIME_FORMAT(TIME(fecha), '%%H:%%i') as hora 
+            FROM {$wpdb->prefix}sgep_citas 
+            WHERE especialista_id = %d 
+            AND DATE(fecha) = %s 
+            AND estado != 'cancelada'",
+            $especialista_id, $fecha
+        ));
+        
+        $horas_ocupadas = array();
+        foreach ($citas as $cita) {
+            $horas_ocupadas[] = $cita->hora;
+        }
+        
+        // Generar horas disponibles basadas en la disponibilidad del especialista
+        $horas_disponibles = array();
+        $duracion_consulta = get_user_meta($especialista_id, 'sgep_duracion_consulta', true);
+        $duracion_consulta = $duracion_consulta ? intval($duracion_consulta) : 60;
+        $intervalo_minutos = $duracion_consulta;
+        
+        foreach ($disponibilidad as $slot) {
+            $hora_inicio = strtotime($slot->hora_inicio);
+            $hora_fin = strtotime($slot->hora_fin);
+            
+            // Iterar por los intervalos dentro del horario disponible
+            for ($hora = $hora_inicio; $hora < $hora_fin; $hora += $intervalo_minutos * 60) {
+                $hora_formateada = date('H:i', $hora);
+                
+                // Verificar si la hora ya está ocupada
+                if (!in_array($hora_formateada, $horas_ocupadas)) {
+                    $horas_disponibles[] = $hora_formateada;
+                }
+            }
+        }
+        
+        wp_send_json_success(array('horas' => $horas_disponibles));
     }
     
     /**

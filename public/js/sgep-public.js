@@ -240,7 +240,7 @@ jQuery(document).ready(function($) {
                     if (response.success && response.data.horas && response.data.horas.length > 0) {
                         horaSelector.append('<option value="">-- Seleccionar hora --</option>');
                         
-                        response.data.horas.forEach(function(hora) {
+                        $.each(response.data.horas, function(index, hora) {
                             horaSelector.append('<option value="' + hora + '">' + hora + '</option>');
                         });
                         
@@ -427,7 +427,7 @@ jQuery(document).ready(function($) {
      */
     function initFiltradoEspecialistas() {
         // Filtrado AJAX de especialistas (para directorio público)
-        $('#sgep_filtrar_especialistas').on('change', function() {
+        $('.sgep-filter-form select').on('change', function() {
             var form = $(this).closest('form');
             var especialidad = form.find('[name="especialidad"]').val();
             var modalidad = form.find('[name="modalidad"]').val();
